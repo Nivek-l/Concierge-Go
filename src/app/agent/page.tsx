@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, Briefcase, CheckCircle2, ClipboardList, Star, Wallet } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { ArrowRight, CheckCircle2, ClipboardList, Star, Wallet } from 'lucide-react'
 
 import { requireAgent } from '@/lib/auth'
 import { getAgentStats, getAgentTasks } from '@/database/agents'
@@ -20,37 +21,24 @@ export const metadata: Metadata = {
 
 export default async function AgentDashboardPage() {
   const user = await requireAgent()
+
+  if (user.agent.verification_status !== 'verified') {
+    console.info('[agent-route]', {
+      pathname: '/agent',
+      authLoading: false,
+      userId: user.id,
+      agentProfileLoading: false,
+      verificationStatus: user.agent.verification_status,
+      redirectDestination: '/agent/verification',
+    })
+    redirect('/agent/verification')
+  }
+
   const [stats, activeTasks] = await Promise.all([
     getAgentStats(),
     getAgentTasks(user.agent.id, { assignmentStatuses: ['active'] }),
   ])
 
-  if (user.agent.verification_status !== 'verified') {
-    return (
-      <Card className="mx-auto max-w-lg">
-        <CardContent className="flex flex-col items-center py-10 text-center">
-          <Briefcase className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <h1 className="mt-4 font-display text-xl font-bold tracking-tight">
-            {user.agent.verification_status === 'pending'
-              ? 'Your verification is under review'
-              : user.agent.verification_status === 'rejected'
-                ? 'Your verification needs another look'
-                : 'Complete your verification'}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground text-pretty">
-            {user.agent.verification_status === 'pending'
-              ? 'Operations is reviewing your details. This usually takes a short while — check back soon.'
-              : 'Verified Go Agents get access to available tasks. Tell us a bit about how you work to get started.'}
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/agent/verification">
-              {user.agent.verification_status === 'pending' ? 'View submission' : 'Start verification'}
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
 
   return (
     <div className="space-y-8">

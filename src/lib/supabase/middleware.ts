@@ -101,6 +101,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  if (pathname === '/agent' || pathname === '/agent/verification') {
+    console.info('[agent-route:middleware]', {
+      pathname,
+      authLoading: false,
+      userId: user.id,
+      agentProfileLoading: null,
+      verificationStatus: null,
+      role,
+      redirectDestination: null,
+    })
+  }
+
   if (match && !match.roles.includes(role)) {
     const url = request.nextUrl.clone()
     url.pathname = homeForRole(role)

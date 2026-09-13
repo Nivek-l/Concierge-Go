@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { CheckCircle2, Clock, ShieldAlert } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { Clock, ShieldAlert } from 'lucide-react'
 
 import { requireAgent } from '@/lib/auth'
 import { getLatestVerification } from '@/database/agents'
@@ -18,20 +19,25 @@ export default async function AgentVerificationPage() {
   const latest = await getLatestVerification(user.agent.id)
 
   if (user.agent.verification_status === 'verified') {
-    return (
-      <Card className="mx-auto max-w-lg">
-        <CardContent className="flex flex-col items-center py-10 text-center">
-          <CheckCircle2 className="h-8 w-8 text-success" aria-hidden />
-          <h1 className="mt-4 font-display text-xl font-bold tracking-tight">
-            You&apos;re verified
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You can accept tasks from the job board any time.
-          </p>
-        </CardContent>
-      </Card>
-    )
+    console.info('[agent-route]', {
+      pathname: '/agent/verification',
+      authLoading: false,
+      userId: user.id,
+      agentProfileLoading: false,
+      verificationStatus: user.agent.verification_status,
+      redirectDestination: '/agent',
+    })
+    redirect('/agent')
   }
+
+  console.info('[agent-route]', {
+    pathname: '/agent/verification',
+    authLoading: false,
+    userId: user.id,
+    agentProfileLoading: false,
+    verificationStatus: user.agent.verification_status,
+    redirectDestination: null,
+  })
 
   if (latest?.status === 'pending') {
     return (

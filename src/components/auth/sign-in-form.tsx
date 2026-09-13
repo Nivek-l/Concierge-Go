@@ -22,8 +22,7 @@ export function SignInForm({ next }: { next?: string }) {
   useEffect(() => {
     if (state?.ok) {
       toast.success('Signed in')
-      router.push(state.data.redirectTo)
-      router.refresh()
+      router.replace(state.data.redirectTo)
     }
   }, [state, router])
 
