@@ -51,11 +51,16 @@ export interface VerifyPaymentResult {
   raw?: Json
 }
 
+export interface VerifyPaymentContext {
+  amountKobo: number
+  providerPayload: Json | null
+}
+
 export interface PaymentProvider {
   readonly name: PaymentProviderName
   readonly isMock: boolean
   initialize(params: InitializePaymentParams): Promise<InitializePaymentResult>
-  verify(reference: string): Promise<VerifyPaymentResult>
+  verify(reference: string, context: VerifyPaymentContext): Promise<VerifyPaymentResult>
 }
 
 /* -------------------------------------------------------------------------- */
@@ -68,6 +73,24 @@ export interface PaymentProvider {
  * or failure. Verification still round-trips through the server, so the code
  * path exercised in development is the same one Paystack will use.
  */
+const MOCK_OUTCOMES = ['success', 'failed', 'pending'] as const
+type MockOutcome = (typeof MOCK_OUTCOMES)[number]
+
+function configuredMockOutcome(): MockOutcome {
+  const requested = (process.env.MOCK_PAYMENT_OUTCOME ?? 'pending').toLowerCase()
+  return MOCK_OUTCOMES.includes(requested as MockOutcome) ? (requested as MockOutcome) : 'pending'
+}
+
+function mockOutcomeFromPayload(payload: Json | null): MockOutcome {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const value = payload.mock_outcome
+    if (typeof value === 'string' && MOCK_OUTCOMES.includes(value as MockOutcome)) {
+      return value as MockOutcome
+    }
+  }
+  return configuredMockOutcome()
+}
+
 const mockProvider: PaymentProvider = {
   name: 'mock',
   isMock: true,
@@ -86,28 +109,32 @@ const mockProvider: PaymentProvider = {
         mode: 'mock',
         amount_kobo: params.amountKobo,
         task_reference: params.taskReference,
+        mock_outcome: configuredMockOutcome(),
       },
     }
   },
 
-  async verify(reference) {
-    /**
-     * In mock mode the outcome is decided by the developer on the mock
-     * checkout page, which records its choice on the payment row before
-     * calling verification. Reaching here means "the customer completed the
-     * mock flow", so the transaction is treated as successful; the failure
-     * path is driven by the mock page marking the payment failed directly.
-     */
+  async verify(reference, context) {
+    // The mock "provider" result is server-owned state. The browser may ask
+    // the server to simulate an outcome, but verify() is still the authority
+    // that translates that stored provider state into a payment result.
+    const outcome = mockOutcomeFromPayload(context.providerPayload)
+    const now = new Date().toISOString()
+
     return {
       provider: 'mock',
       reference,
-      status: 'succeeded',
-      amountKobo: 0, // Caller reconciles against the quote; see verifyAndRecordPayment.
+      status: outcome === 'success' ? 'succeeded' : outcome,
+      amountKobo: context.amountKobo,
       channel: 'mock',
-      paidAt: new Date().toISOString(),
+      paidAt: outcome === 'success' ? now : null,
       providerReference: `mock_${reference}`,
-      failureReason: null,
-      raw: { mode: 'mock', verified_at: new Date().toISOString() },
+      failureReason: outcome === 'failed' ? 'Declined by deterministic mock provider.' : null,
+      raw: {
+        mode: 'mock',
+        mock_outcome: outcome,
+        verified_at: now,
+      },
     }
   },
 }
@@ -205,7 +232,7 @@ const paystackProvider: PaymentProvider = {
     }
   },
 
-  async verify(reference) {
+  async verify(reference, _context) {
     const payload = await paystackFetch<PaystackVerifyData>(
       `/transaction/verify/${encodeURIComponent(reference)}`,
     )
@@ -240,6 +267,10 @@ const paystackProvider: PaymentProvider = {
 
 export function getPaymentProvider(): PaymentProvider {
   return getPaymentMode() === 'paystack' ? paystackProvider : mockProvider
+}
+
+export function getPaymentProviderByName(name: PaymentProviderName): PaymentProvider {
+  return name === 'paystack' ? paystackProvider : mockProvider
 }
 
 export function paymentModeSummary() {
