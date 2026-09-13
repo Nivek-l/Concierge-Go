@@ -138,9 +138,21 @@ export async function initiatePaymentAction(
       isMock: provider.isMock,
     })
   } catch (error) {
-    logError('payments.initiate', error, { taskId })
-    return actionError(toUserMessage(error, ERROR_MESSAGES.paymentFailed))
-  }
+  console.error('[payments.initiate:FAILED]', {
+    taskId,
+    error:
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : error,
+  })
+
+  logError('payments.initiate', error, { taskId })
+  return actionError(toUserMessage(error, ERROR_MESSAGES.paymentFailed))
+}
 }
 
 export type VerifyPaymentResultData = {
