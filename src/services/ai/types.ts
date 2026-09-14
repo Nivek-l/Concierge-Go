@@ -56,3 +56,31 @@ export const CATEGORY_NAMES: Record<string, string> = {
   events: 'Events',
   other: 'Other',
 }
+
+
+export type AiChatRole = 'system' | 'user' | 'assistant'
+
+export interface AiChatMessage {
+  role: AiChatRole
+  content: string
+}
+
+export interface AiTaskDraft {
+  title: string
+  description: string
+  categorySlug: string
+  urgency: TaskUrgency
+  citySlug: string
+  locationAddress: string
+  locationArea: string | null
+  locationLandmark: string | null
+  destinationRequired: boolean
+  destinationAddress: string | null
+  destinationArea: string | null
+  preferredDate: string | null
+  preferredTimeSlot: string | null
+  budgetNaira: number | null
+  additionalInstructions: string | null
+  summary: string
+  missingFields: string[]
+}

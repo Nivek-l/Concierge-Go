@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 
 import { AppError, ERROR_MESSAGES } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { homeForRole } from '@/lib/supabase/middleware'
 import type { AgentRow, ProfileRow, UserRole } from '@/types/database'
 import type { SessionUser } from '@/types/domain'
@@ -41,39 +40,12 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
   let agent: AgentRow | null = null
   if (profile.role === 'agent') {
-    // Read the authoritative agent row only after authentication/profile loading
-    // has completed. Treat query errors differently from a genuinely missing row.
-    const { data, error: agentError } = await supabase
+    const { data } = await supabase
       .from('agents')
       .select('*')
       .eq('profile_id', user.id)
       .maybeSingle<AgentRow>()
-
-    if (agentError) {
-      throw new AppError('We could not load your agent profile.', { code: 'agent_profile_load_failed' })
-    }
-
     agent = data ?? null
-
-    // Public signup should create this row in handle_new_user(). Repair older
-    // accounts once instead of redirecting to a route that also requires it.
-    if (!agent) {
-      const admin = createAdminClient()
-      const { data: repaired, error: repairError } = await admin
-        .from('agents')
-        .upsert({ profile_id: user.id }, { onConflict: 'profile_id' })
-        .select('*')
-        .single<AgentRow>()
-
-      if (repairError || !repaired) {
-        throw new AppError('Your agent profile is not set up yet. Contact Concierge Go operations.', {
-          code: 'no_agent',
-        })
-      }
-
-      console.info('[agent-auth:repaired-missing-agent]', { userId: user.id, agentId: repaired.id })
-      agent = repaired
-    }
   }
 
   return {
@@ -110,11 +82,9 @@ export async function requireCustomer(nextPath?: string) {
 export async function requireAgent(nextPath?: string): Promise<SessionUser & { agent: AgentRow }> {
   const user = await requireRole(['agent'], nextPath)
   if (!user.agent) {
-    // Never redirect a missing record to /agent/verification: that route also
-    // requires an agent record and would self-redirect forever.
-    throw new AppError('Your agent profile is not set up yet. Contact Concierge Go operations.', {
-      code: 'no_agent',
-    })
+    // An agent profile without an agent record cannot work; the operations
+    // team resolves this from /admin/agents.
+    redirect('/agent/verification')
   }
   return user as SessionUser & { agent: AgentRow }
 }

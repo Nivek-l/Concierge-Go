@@ -8,7 +8,7 @@ import { ERROR_MESSAGES, logError, toUserMessage } from '@/lib/errors'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { initiatePaymentSchema, verifyPaymentSchema } from '@/lib/validations'
-import { buildPaymentReference, getPaymentProvider, getPaymentProviderByName } from '@/services/payments'
+import { buildPaymentReference, getPaymentProvider } from '@/services/payments'
 import { taskEvents } from '@/services/notifications'
 import { actionError, actionOk, type ActionResult } from '@/types/domain'
 import type { TaskRow } from '@/types/database'
@@ -81,14 +81,12 @@ export async function initiatePaymentAction(
       .from('payments')
       .select('id, reference, authorization_url, status')
       .eq('task_id', taskId)
-      .in('status', ['pending', 'processing'])
+      .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     const provider = getPaymentProvider()
-
-    console.info('[payment:init]', { taskId, provider: provider.name, reused: Boolean(existing?.authorization_url) })
 
     if (existing?.authorization_url) {
       return actionOk({
@@ -129,8 +127,6 @@ export async function initiatePaymentAction(
 
     if (error) throw error
 
-    console.info('[payment:init:created]', { taskId, reference: initialized.reference, provider: initialized.provider })
-
     revalidatePath(`/tasks/${taskId}`)
     return actionOk({
       authorizationUrl: initialized.authorizationUrl,
@@ -138,21 +134,9 @@ export async function initiatePaymentAction(
       isMock: provider.isMock,
     })
   } catch (error) {
-  console.error('[payments.initiate:FAILED]', {
-    taskId,
-    error:
-      error instanceof Error
-        ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          }
-        : error,
-  })
-
-  logError('payments.initiate', error, { taskId })
-  return actionError(toUserMessage(error, ERROR_MESSAGES.paymentFailed))
-}
+    logError('payments.initiate', error, { taskId })
+    return actionError(toUserMessage(error, ERROR_MESSAGES.paymentFailed))
+  }
 }
 
 export type VerifyPaymentResultData = {
@@ -179,7 +163,7 @@ export async function verifyPaymentAction(
 
     const { data: payment } = await admin
       .from('payments')
-      .select('id, task_id, customer_id, amount_kobo, status, provider, reference, provider_payload')
+      .select('id, task_id, customer_id, amount_kobo, status, provider, reference')
       .eq('reference', parsed.data.reference)
       .maybeSingle()
 
@@ -201,22 +185,11 @@ export async function verifyPaymentAction(
     }
 
     if (payment.status === 'failed' || payment.status === 'abandoned') {
-      return actionOk({
-        status: 'failed',
-        taskId,
-        amountKobo: payment.amount_kobo as number,
-      })
+      return actionError(ERROR_MESSAGES.paymentFailed)
     }
 
-    const provider = getPaymentProviderByName(payment.provider as 'mock' | 'paystack')
-    console.info('[payment:verify:start]', { reference: parsed.data.reference, paymentStatus: payment.status, provider: payment.provider, taskId })
-
-    const verification = await provider.verify(parsed.data.reference, {
-      amountKobo: payment.amount_kobo as number,
-      providerPayload: (payment.provider_payload ?? null) as import('@/types/database').Json | null,
-    })
-
-    console.info('[payment:verify:provider-result]', { reference: parsed.data.reference, provider: payment.provider, status: verification.status, taskId })
+    const provider = getPaymentProvider()
+    const verification = await provider.verify(parsed.data.reference)
 
     if (verification.status !== 'succeeded') {
       await admin
@@ -233,7 +206,7 @@ export async function verifyPaymentAction(
       if (verification.status === 'pending') {
         return actionOk({ status: 'pending', taskId, amountKobo: payment.amount_kobo as number })
       }
-      return actionOk({ status: 'failed', taskId, amountKobo: payment.amount_kobo as number })
+      return actionError(ERROR_MESSAGES.paymentFailed)
     }
 
     // Real providers report the amount they actually captured. Underpayment is
@@ -279,32 +252,23 @@ export async function verifyPaymentAction(
       .maybeSingle<Pick<TaskRow, 'id' | 'reference' | 'title' | 'customer_id' | 'status'>>()
 
     if (task && task.status === 'awaiting_payment') {
-      // Compare-and-set makes task release idempotent under concurrent callback,
-      // refresh and webhook verification. Only one verifier can win this update.
-      const { data: releasedTask } = await admin
+      await admin
         .from('tasks')
         .update({ status: 'paid', paid_at: new Date().toISOString() })
         .eq('id', taskId)
-        .eq('status', 'awaiting_payment')
-        .select('id')
+
+      const { data: customer } = await admin
+        .from('profiles')
+        .select('email')
+        .eq('id', task.customer_id)
         .maybeSingle()
 
-      console.info('[payment:release]', { reference: parsed.data.reference, taskId, released: Boolean(releasedTask) })
-
-      if (releasedTask) {
-        const { data: customer } = await admin
-          .from('profiles')
-          .select('email')
-          .eq('id', task.customer_id)
-          .maybeSingle()
-
-        await taskEvents.paymentReceived(
-          task,
-          task.customer_id,
-          expectedKobo,
-          (customer?.email as string | undefined) ?? null,
-        )
-      }
+      await taskEvents.paymentReceived(
+        task,
+        task.customer_id,
+        expectedKobo,
+        (customer?.email as string | undefined) ?? null,
+      )
     }
 
     revalidatePath(`/tasks/${taskId}`)
@@ -327,8 +291,8 @@ export async function verifyPaymentAction(
  */
 export async function completeMockPaymentAction(
   reference: string,
-  outcome: 'success' | 'failure' | 'pending',
-): Promise<ActionResult<{ taskId: string; status: 'succeeded' | 'failed' | 'pending' }>> {
+  outcome: 'success' | 'failure',
+): Promise<ActionResult<{ taskId: string; status: string }>> {
   if (getPaymentMode() !== 'mock') {
     return actionError('Mock payments are disabled on this deployment.')
   }
@@ -339,7 +303,7 @@ export async function completeMockPaymentAction(
 
     const { data: payment } = await admin
       .from('payments')
-      .select('id, task_id, customer_id, status, provider, provider_payload')
+      .select('id, task_id, customer_id, status, provider')
       .eq('reference', reference)
       .maybeSingle()
 
@@ -349,40 +313,25 @@ export async function completeMockPaymentAction(
 
     const taskId = payment.task_id as string
 
-    // If already terminal, verification below simply returns the stored truth.
-    // Otherwise record only the simulated provider outcome; do NOT mark the
-    // payment or task successful here. verifyPaymentAction remains authoritative.
-    if (payment.status !== 'succeeded' && payment.status !== 'failed' && payment.status !== 'abandoned') {
-      const existingPayload =
-        payment.provider_payload && typeof payment.provider_payload === 'object' && !Array.isArray(payment.provider_payload)
-          ? payment.provider_payload
-          : {}
-
-      const mockOutcome = outcome === 'failure' ? 'failed' : outcome
-      const { error } = await admin
+    if (outcome === 'failure') {
+      await admin
         .from('payments')
         .update({
-          provider_payload: {
-            ...existingPayload,
-            mock_outcome: mockOutcome,
-            mock_selected_at: new Date().toISOString(),
-          },
-          // A previous PENDING verification uses processing. Keep it eligible
-          // for a later deterministic re-verification.
-          status: payment.status === 'processing' ? 'pending' : payment.status,
-          failure_reason: null,
+          status: 'failed',
+          failure_reason: 'Declined in development payment mode.',
         })
         .eq('id', payment.id as string)
 
-      if (error) throw error
+      revalidatePath(`/tasks/${taskId}`)
+      return actionOk({ taskId, status: 'failed' })
     }
 
     const result = await verifyPaymentAction(reference)
     if (!result.ok) return actionError(result.error)
 
-    return actionOk({ taskId, status: result.data.status })
+    return actionOk({ taskId, status: 'succeeded' })
   } catch (error) {
-    logError('payments.completeMock', error, { reference, outcome })
+    logError('payments.completeMock', error, { reference })
     return actionError(toUserMessage(error, ERROR_MESSAGES.paymentFailed))
   }
 }

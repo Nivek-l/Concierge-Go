@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/tasks', label: 'My tasks' },
   { href: '/tasks/new', label: 'Request a task' },
+  { href: '/tasks/ai', label: 'Request with AI' },
   { href: '/profile', label: 'Profile' },
 ]
 

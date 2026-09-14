@@ -8,6 +8,7 @@ import { createDraftTaskAction, finalizeTaskAction, type FinalizeTaskResult } fr
 import { TIME_SLOTS, URGENCY_META } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { CityRow, TaskCategoryRow, TaskUrgency } from '@/types/database'
+import type { AiTaskDraft } from '@/services/ai/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,6 +19,7 @@ import { FileUploader, type UploadedFileMeta } from '@/components/shared/file-up
 import { toast } from '@/components/ui/sonner'
 
 const URGENCIES: TaskUrgency[] = ['standard', 'priority', 'urgent']
+const AI_TASK_DRAFT_STORAGE_KEY = 'concierge-go:ai-task-draft'
 
 export function NewTaskForm({
   categories,
@@ -30,6 +32,8 @@ export function NewTaskForm({
 }) {
   const router = useRouter()
   const [draftTaskId, setDraftTaskId] = useState<string | null>(null)
+  const [initialDraft, setInitialDraft] = useState<AiTaskDraft | null>(null)
+  const [draftHydrated, setDraftHydrated] = useState(false)
   const [draftError, setDraftError] = useState(false)
   const [attachments, setAttachments] = useState<UploadedFileMeta[]>([])
   const [urgency, setUrgency] = useState<TaskUrgency>('standard')
@@ -38,6 +42,24 @@ export function NewTaskForm({
     finalizeTaskAction,
     null,
   )
+
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(AI_TASK_DRAFT_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as AiTaskDraft
+        setInitialDraft(parsed)
+        setUrgency(parsed.urgency ?? 'standard')
+        setDestinationRequired(Boolean(parsed.destinationRequired))
+        sessionStorage.removeItem(AI_TASK_DRAFT_STORAGE_KEY)
+      }
+    } catch {
+      sessionStorage.removeItem(AI_TASK_DRAFT_STORAGE_KEY)
+    } finally {
+      setDraftHydrated(true)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -60,6 +82,15 @@ export function NewTaskForm({
 
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined
 
+  if (!draftHydrated) {
+    return (
+      <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        Preparing your request…
+      </div>
+    )
+  }
+
   return (
     <form action={formAction} className="space-y-8">
       <input type="hidden" name="draftTaskId" value={draftTaskId ?? ''} />
@@ -68,6 +99,20 @@ export function NewTaskForm({
       <FormError message={state && !state.ok ? state.error : null} />
       {draftError ? (
         <FormError message="We could not prepare your request. You can still fill this in, but try refreshing if attachments fail to upload." />
+      ) : null}
+
+      {initialDraft ? (
+        <div className="rounded-xl border border-primary/25 bg-primary-subtle/40 p-4">
+          <p className="text-sm font-semibold">AI draft loaded</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            We filled this form from your chat. Review every detail, correct anything that is missing, then submit when you are happy with it.
+          </p>
+          {initialDraft.missingFields.length > 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Still to confirm: {initialDraft.missingFields.join(' · ')}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="space-y-4">
@@ -83,6 +128,7 @@ export function NewTaskForm({
               {...props}
               name="title"
               placeholder="e.g. Collect my certificate from UNICAL and bring it to me"
+              defaultValue={initialDraft?.title ?? undefined}
               required
             />
           )}
@@ -101,6 +147,7 @@ export function NewTaskForm({
               name="description"
               rows={5}
               placeholder="I need someone to collect my certificate from the school and bring it to me. The registrar's office is..."
+              defaultValue={initialDraft?.description ?? undefined}
               required
             />
           )}
@@ -109,7 +156,7 @@ export function NewTaskForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field name="categorySlug" label="Category" required error={fieldErrors?.categorySlug}>
             {() => (
-              <Select name="categorySlug" defaultValue={categories[0]?.slug}>
+              <Select name="categorySlug" defaultValue={categories.some((category) => category.slug === initialDraft?.categorySlug) ? initialDraft?.categorySlug : categories[0]?.slug}>
                 <SelectTrigger id="field-categorySlug">
                   <SelectValue placeholder="Choose a category" />
                 </SelectTrigger>
@@ -126,7 +173,7 @@ export function NewTaskForm({
 
           <Field name="citySlug" label="City" required error={fieldErrors?.citySlug}>
             {() => (
-              <Select name="citySlug" defaultValue={cities[0]?.slug ?? 'calabar'}>
+              <Select name="citySlug" defaultValue={cities.some((city) => city.slug === initialDraft?.citySlug) ? initialDraft?.citySlug : (cities[0]?.slug ?? 'calabar')}>
                 <SelectTrigger id="field-citySlug">
                   <SelectValue />
                 </SelectTrigger>
@@ -154,15 +201,15 @@ export function NewTaskForm({
             error={fieldErrors?.locationAddress}
           >
             {(props) => (
-              <Input {...props} name="locationAddress" placeholder="e.g. Registrar's office, UNICAL" required />
+              <Input {...props} name="locationAddress" placeholder="e.g. Registrar's office, UNICAL" defaultValue={initialDraft?.locationAddress ?? undefined} required />
             )}
           </Field>
           <Field name="locationArea" label="Area" hint="e.g. Marian, Calabar Municipal">
-            {(props) => <Input {...props} name="locationArea" placeholder="Area" />}
+            {(props) => <Input {...props} name="locationArea" placeholder="Area" defaultValue={initialDraft?.locationArea ?? undefined} />}
           </Field>
         </div>
         <Field name="locationLandmark" label="Landmark" hint="Anything that helps an agent find the spot.">
-          {(props) => <Input {...props} name="locationLandmark" placeholder="Nearest landmark" />}
+          {(props) => <Input {...props} name="locationLandmark" placeholder="Nearest landmark" defaultValue={initialDraft?.locationLandmark ?? undefined} />}
         </Field>
 
         <div className="flex items-start gap-2.5">
@@ -185,10 +232,10 @@ export function NewTaskForm({
               required
               error={fieldErrors?.destinationAddress}
             >
-              {(props) => <Input {...props} name="destinationAddress" placeholder="Where should it be delivered?" />}
+              {(props) => <Input {...props} name="destinationAddress" placeholder="Where should it be delivered?" defaultValue={initialDraft?.destinationAddress ?? undefined} />}
             </Field>
             <Field name="destinationArea" label="Destination area">
-              {(props) => <Input {...props} name="destinationArea" placeholder="Area" />}
+              {(props) => <Input {...props} name="destinationArea" placeholder="Area" defaultValue={initialDraft?.destinationArea ?? undefined} />}
             </Field>
           </div>
         ) : null}
@@ -198,11 +245,11 @@ export function NewTaskForm({
         <h2 className="text-sm font-semibold">Timing & urgency</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field name="preferredDate" label="Preferred date">
-            {(props) => <Input {...props} name="preferredDate" type="date" />}
+            {(props) => <Input {...props} name="preferredDate" type="date" defaultValue={initialDraft?.preferredDate ?? undefined} />}
           </Field>
           <Field name="preferredTimeSlot" label="Preferred time">
             {() => (
-              <Select name="preferredTimeSlot">
+              <Select name="preferredTimeSlot" defaultValue={initialDraft?.preferredTimeSlot ?? undefined}>
                 <SelectTrigger id="field-preferredTimeSlot">
                   <SelectValue placeholder="Any time" />
                 </SelectTrigger>
@@ -261,13 +308,13 @@ export function NewTaskForm({
             {(props) => <Input {...props} name="contactPhone" type="tel" placeholder={defaultPhone ?? '0803 123 4567'} />}
           </Field>
           <Field name="budgetNaira" label="Your budget" hint="Optional — helps us quote accurately.">
-            {(props) => <Input {...props} name="budgetNaira" type="number" min="0" step="100" placeholder="₦" />}
+            {(props) => <Input {...props} name="budgetNaira" type="number" min="0" step="100" placeholder="₦" defaultValue={initialDraft?.budgetNaira ?? undefined} />}
           </Field>
         </div>
 
         <Field name="additionalInstructions" label="Additional instructions">
           {(props) => (
-            <Textarea {...props} name="additionalInstructions" rows={3} placeholder="Anything else the agent should know" />
+            <Textarea {...props} name="additionalInstructions" rows={3} placeholder="Anything else the agent should know" defaultValue={initialDraft?.additionalInstructions ?? undefined} />
           )}
         </Field>
 

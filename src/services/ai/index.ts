@@ -4,6 +4,7 @@ import type { TaskInterpretationRecord } from '@/types/database'
 
 import { deterministicInterpreter } from './deterministic'
 import { anthropicInterpreter } from './anthropic'
+import { deepSeekInterpreter } from './deepseek'
 import { CATEGORY_NAMES, type InterpretTaskInput, type TaskInterpretation } from './types'
 
 export type { InterpretTaskInput, TaskInterpretation, TaskComplexity } from './types'
@@ -29,9 +30,11 @@ export { CATEGORY_NAMES } from './types'
 export async function interpretTask(input: InterpretTaskInput): Promise<TaskInterpretation> {
   const provider = getAiProvider()
 
-  if (provider === 'anthropic') {
+  if (provider === 'anthropic' || provider === 'deepseek') {
     try {
-      return await anthropicInterpreter.interpret(input)
+      return provider === 'deepseek'
+        ? await deepSeekInterpreter.interpret(input)
+        : await anthropicInterpreter.interpret(input)
     } catch (error) {
       logError('ai.interpretTask.fallback', error, { provider })
     }
