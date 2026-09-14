@@ -10,8 +10,12 @@ import {
   type TaskInterpreter,
 } from './types'
 
-const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions'
-const DEFAULT_MODEL = 'deepseek-v4-flash'
+const AI_BASE_URL = (
+  process.env.AI_BASE_URL || 'https://agentrouter.org/v1'
+).replace(/\/$/, '')
+
+const DEEPSEEK_URL = `${AI_BASE_URL}/chat/completions`
+const DEFAULT_MODEL = process.env.AI_MODEL || 'deepseek-v4-flash'
 const TIMEOUT_MS = 20_000
 
 const CATEGORY_GUIDE = `
