@@ -12,10 +12,15 @@ import {
 
 const AI_BASE_URL = (
   process.env.AI_BASE_URL || 'https://ps.air-outer.com/v1'
-).replace(/\/$/, '')
+)
+  .trim()
+  .replace(/^AI_BASE_URL\s*=\s*/i, '')
+  .replace(/\/chat\/completions\/?$/i, '')
+  .replace(/\/+$/, '')
 
 const DEEPSEEK_URL = `${AI_BASE_URL}/chat/completions`
-const DEFAULT_MODEL = process.env.AI_MODEL || 'deepseek-v4-flash'
+const DEFAULT_MODEL =
+  process.env.AI_MODEL || 'deepseek-v4-flash'
 const TIMEOUT_MS = 20_000
 
 const CATEGORY_GUIDE = `
