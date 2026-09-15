@@ -99,7 +99,7 @@ export async function initiatePaymentAction(
     const reference = buildPaymentReference(task.reference)
 
     const callbackUrl =
-  `${getAppUrl()}/payments/callback?reference=${encodeURIComponent(reference)}`
+  `${getAppUrl()}/payments/callback`
 
 console.error('[payment:callback-url]', {
   reference,
