@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { requireCustomerAction } from '@/lib/auth'
 import { logError } from '@/lib/errors'
-import { createTaskDraftFromChat } from '@/services/ai/deepseek'
+import { createTaskDraftFromChat } from '@/services/ai/openrouter'
 import type { AiChatMessage } from '@/services/ai/types'
 
 export const runtime = 'nodejs'

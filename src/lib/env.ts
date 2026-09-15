@@ -58,10 +58,11 @@ export function isPaystackConfigured() {
   return Boolean(process.env.PAYSTACK_SECRET_KEY && publicEnv.paystackPublicKey)
 }
 
-export type AiProvider = 'deterministic' | 'anthropic' | 'deepseek'
+export type AiProvider = 'deterministic' | 'anthropic' | 'deepseek' | 'openrouter'
 
 export function getAiProvider(): AiProvider {
   const requested = (process.env.AI_PROVIDER ?? 'deterministic').toLowerCase()
+  if (requested === 'openrouter' && process.env.OPENROUTER_API_KEY) return 'openrouter'
   if (requested === 'anthropic' && process.env.AI_API_KEY) return 'anthropic'
   if (requested === 'deepseek' && (process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY)) return 'deepseek'
   return 'deterministic'

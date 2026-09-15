@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { requireCustomerAction } from '@/lib/auth'
 import { logError } from '@/lib/errors'
-import { chatWithDeepSeek } from '@/services/ai/deepseek'
+import { chatWithOpenRouter } from '@/services/ai/openrouter'
 import type { AiChatMessage } from '@/services/ai/types'
 
 export const runtime = 'nodejs'
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Send a message to continue.' }, { status: 400 })
     }
 
-    const reply = await chatWithDeepSeek(messages)
+    const reply = await chatWithOpenRouter(messages)
     return NextResponse.json({ reply })
   } catch (error) {
     logError('api.ai.chat', error)
