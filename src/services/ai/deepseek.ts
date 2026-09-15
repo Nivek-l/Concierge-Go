@@ -113,39 +113,60 @@ async function callDeepSeek(
     const response = await fetch(DEEPSEEK_URL, {
       method: 'POST',
       signal: controller.signal,
+      redirect: 'manual',
       headers: {
         Authorization: `Bearer ${getApiKey()}`,
         'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'User-Agent': 'Concierge-Go/1.0',
       },
       body: JSON.stringify({
-  model: DEFAULT_MODEL,
-  messages,
-  max_tokens: options.maxTokens ?? 900,
-  ...(options.json ? { response_format: { type: 'json_object' } } : {}),
-}),
+        model: DEFAULT_MODEL,
+        messages,
+        max_tokens: options.maxTokens ?? 900,
+        ...(options.json
+          ? { response_format: { type: 'json_object' } }
+          : {}),
+      }),
     })
 
+    const contentType = response.headers.get('content-type') || 'unknown'
+    const raw = await response.text()
+
     if (!response.ok) {
-      const detail = await response.text().catch(() => '')
-      throw new Error(`DeepSeek API returned ${response.status}${detail ? `: ${detail.slice(0, 300)}` : ''}`)
+      throw new Error(
+        `Agent Router returned ${response.status}; type=${contentType}; body=${raw.slice(0, 300)}`,
+      )
     }
 
-    const payload = (await response.json()) as DeepSeekResponse
+    if (!contentType.includes('application/json')) {
+      throw new Error(
+        `Agent Router returned non-JSON content; status=${response.status}; type=${contentType}; url=${response.url}; body=${raw.slice(0, 300)}`,
+      )
+    }
+
+    let payload: DeepSeekResponse
+
+    try {
+      payload = JSON.parse(raw) as DeepSeekResponse
+    } catch {
+      throw new Error(
+        `Agent Router returned invalid JSON; status=${response.status}; body=${raw.slice(0, 300)}`,
+      )
+    }
+
     const text = payload.choices?.[0]?.message?.content?.trim()
-    if (!text) throw new Error('DeepSeek returned an empty response.')
+
+    if (!text) {
+      throw new Error(
+        `Agent Router returned no assistant message; body=${raw.slice(0, 300)}`,
+      )
+    }
+
     return text
   } finally {
     clearTimeout(timeout)
   }
-}
-
-function parseJsonObject(text: string): Record<string, unknown> {
-  const trimmed = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  const parsed = JSON.parse(trimmed) as unknown
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('DeepSeek did not return a JSON object.')
-  }
-  return parsed as Record<string, unknown>
 }
 
 export async function chatWithDeepSeek(history: AiChatMessage[]): Promise<string> {
