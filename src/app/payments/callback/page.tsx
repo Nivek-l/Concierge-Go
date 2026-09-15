@@ -27,8 +27,8 @@ export default async function PaymentCallbackPage({
 
   const reference = (
     Array.isArray(rawReference)
-    ? rawReference[0] ?? "
-    : rawReference ?? "
+    ? rawReference[0] ?? ''
+    : rawReference ?? ''
   ).trim()
   
   await requireUser()
