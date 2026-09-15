@@ -23,13 +23,13 @@ export default async function PaymentCallbackPage({
 }) {
   const params = await searchParams
 
-  const rawreference = params.reference ?? params.trxref
+const rawReference = params.reference ?? params.trxref
 
-  const reference = (
-    Array.isArray(rawReference)
+const reference = (
+  Array.isArray(rawReference)
     ? rawReference[0] ?? ''
     : rawReference ?? ''
-  ).trim()
+).trim()
   
   await requireUser()
 
