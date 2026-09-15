@@ -20,12 +20,31 @@ export function isSupabaseConfigured() {
   return Boolean(publicEnv.supabaseUrl && publicEnv.supabaseAnonKey)
 }
 
-export function getAppUrl() {
-  const explicit = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
-  if (explicit) return explicit
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return 'https:conciergego.vercel.app'
+export function getAppUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+
+  if (configuredUrl) {
+    const normalizedUrl = configuredUrl.replace(/\/+$/, '')
+
+    if (
+      process.env.NODE_ENV === 'production' &&
+      normalizedUrl.includes('localhost')
+    ) {
+      throw new Error(
+        'NEXT_PUBLIC_APP_URL cannot use localhost in production.',
+      )
+    }
+    return normalizedUrl
+  }
+  const vercelUrl =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    process.env.VERCEL_URL
+  if (vercelUrl) {
+    return `https://${vercelUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`
+  }
+  return 'http://localhost:3000'
 }
+
 
 export function requireServerEnv(name: string): string {
   const value = process.env[name]
