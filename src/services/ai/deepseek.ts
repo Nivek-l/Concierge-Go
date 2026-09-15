@@ -11,7 +11,7 @@ import {
 } from './types'
 
 const AI_BASE_URL = (
-  process.env.AI_BASE_URL || 'https://agentrouter.org/v1'
+  process.env.AI_BASE_URL || 'https://ps.air-outer.com/v1'
 ).replace(/\/$/, '')
 
 const DEEPSEEK_URL = `${AI_BASE_URL}/chat/completions`
