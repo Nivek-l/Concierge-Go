@@ -98,15 +98,24 @@ export async function initiatePaymentAction(
 
     const reference = buildPaymentReference(task.reference)
 
-    const initialized = await provider.initialize({
-      reference,
-      amountKobo,
-      email: user.email,
-      taskId: task.id,
-      taskReference: task.reference,
-      customerName: user.profile.full_name,
-      callbackUrl: `${getAppUrl()}/payments/callback?reference=${encodeURIComponent(reference)}`,
-    })
+    const callbackUrl =
+  `${getAppUrl()}/payments/callback?reference=${encodeURIComponent(reference)}`
+
+console.error('[payment:callback-url]', {
+  reference,
+  callbackUrl,
+  provider: provider.name,
+})
+
+const initialized = await provider.initialize({
+  reference,
+  amountKobo,
+  email: user.email,
+  taskId: task.id,
+  taskReference: task.reference,
+  customerName: user.profile.full_name,
+  callbackUrl,
+})
 
     // Written with the service-role client: `payments` has no insert policy for
     // customers, by design.
