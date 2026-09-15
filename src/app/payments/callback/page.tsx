@@ -16,9 +16,15 @@ export const metadata: Metadata = {
 export default async function PaymentCallbackPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reference?: string }>
+  searchParams: Promise<{ 
+    reference?: string 
+    trxref?: string
+  }>
 }) {
-  const { reference } = await searchParams
+  const params = await searchParams
+
+  const reference = params.reference ?? params.trxref ??
+  
   await requireUser()
 
   if (!reference) {
