@@ -396,9 +396,6 @@ export async function verifyPaystackSignature(
     Buffer.from(signature, 'utf8'),
   )
 }
-    context?: VerifyPaymentContext,
-  ): Promise<VerifyPaymentResult>
-}
 
 /* -------------------------------------------------------------------------- */
 /* Mock provider                                                              */
