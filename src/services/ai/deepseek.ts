@@ -118,12 +118,11 @@ async function callDeepSeek(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: process.env.AI_MODEL || DEFAULT_MODEL,
-        messages,
-        thinking: { type: 'disabled' },
-        max_tokens: options.maxTokens ?? 900,
-        ...(options.json ? { response_format: { type: 'json_object' } } : {}),
-      }),
+  model: DEFAULT_MODEL,
+  messages,
+  max_tokens: options.maxTokens ?? 900,
+  ...(options.json ? { response_format: { type: 'json_object' } } : {}),
+}),
     })
 
     if (!response.ok) {
