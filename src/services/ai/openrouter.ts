@@ -17,9 +17,9 @@ const CHAT_MODEL =
 
 const DRAFT_MODEL =
   process.env.OPENROUTER_DRAFT_MODEL ||
-  'google/gemma-4-26b-a4b-it:free'
+  'nex-agie/nex-n2.5-pro:free'
 
-const TIMEOUT_MS = 45_000
+const TIMEOUT_MS = 90_000
 
 const CATEGORY_GUIDE = `
 - documents-administration: collecting/submitting documents, government offices, schools, applications, follow-ups
@@ -142,6 +142,9 @@ async function callOpenRouter(
               response_format: {
                 type: 'json_object',
               },
+              reasoning: {
+                effort: 'none',
+              }
             }
           : {}),
       }),
