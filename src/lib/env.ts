@@ -24,18 +24,27 @@ export function getAppUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
 
   if (configuredUrl) {
-    const normalizedUrl = configuredUrl.replace(/\/+$/, '')
-
-    if (
-      process.env.NODE_ENV === 'production' &&
-      normalizedUrl.includes('localhost')
-    ) {
+    let parsed: URL
+    try {
+      parsed = new URL(configuredUrl)
+    } catch {
       throw new Error(
-        'NEXT_PUBLIC_APP_URL cannot use localhost in production.',
+        'NEXT_PUBLIC_APP_URL must be a complete URL such as https://concierge-go-web.vercel.app.',
       )
     }
-    return normalizedUrl
+
+    if (process.env.NODE_ENV === 'production' && parsed.hostname === 'localhost') {
+      throw new Error('NEXT_PUBLIC_APP_URL cannot use localhost in production.')
+    }
+    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+      throw new Error('NEXT_PUBLIC_APP_URL must use https in production.')
+    }
+
+    // Returning the origin prevents an accidental path or trailing slash from
+    // producing a malformed callback URL.
+    return parsed.origin
   }
+
   const vercelUrl =
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     process.env.VERCEL_URL
@@ -62,19 +71,20 @@ export function getServiceRoleKey() {
 
 export type PaymentMode = 'mock' | 'paystack'
 
-/**
- * Resolve the payment mode. Paystack is only selected when the mode asks for it
- * AND a secret key exists, so a half-configured deployment degrades to the
- * clearly-labelled development flow instead of failing at checkout.
- */
+/** Resolve the requested mode and fail clearly if Paystack is incomplete. */
 export function getPaymentMode(): PaymentMode {
   const requested = (process.env.PAYMENT_MODE ?? 'mock').toLowerCase()
-  if (requested === 'paystack' && process.env.PAYSTACK_SECRET_KEY) return 'paystack'
-  return 'mock'
+  if (requested !== 'mock' && requested !== 'paystack') {
+    throw new Error('PAYMENT_MODE must be either mock or paystack.')
+  }
+  if (requested === 'paystack' && !process.env.PAYSTACK_SECRET_KEY) {
+    throw new Error('PAYMENT_MODE is paystack but PAYSTACK_SECRET_KEY is missing.')
+  }
+  return requested
 }
 
 export function isPaystackConfigured() {
-  return Boolean(process.env.PAYSTACK_SECRET_KEY && publicEnv.paystackPublicKey)
+  return Boolean(process.env.PAYSTACK_SECRET_KEY)
 }
 
 export type AiProvider = 'deterministic' | 'anthropic' | 'deepseek' | 'openrouter'

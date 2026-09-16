@@ -275,6 +275,16 @@ const paystackProvider: PaymentProvider = {
 
     const data = payload.data
 
+    if (data.reference !== reference) {
+      logError('paystack.verify', new Error('Paystack returned a different reference'), {
+        reference,
+        returnedReference: data.reference,
+      })
+      throw new AppError(ERROR_MESSAGES.paymentFailed, {
+        code: 'paystack_reference_mismatch',
+      })
+    }
+
     const status =
       data.status === 'success'
         ? ('succeeded' as const)

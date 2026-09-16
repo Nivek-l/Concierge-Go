@@ -1,47 +1,57 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { logError } from '@/lib/errors'
-import { verifyPaymentAction } from '@/actions/payments'
+import { verifyPaymentSchema } from '@/lib/validations'
 import { verifyPaystackSignature } from '@/services/payments'
+import { verifyAndRecordPayment } from '@/services/payments/reconcile'
+
+type PaystackEvent = {
+  event?: string
+  data?: { reference?: unknown }
+}
 
 /**
- * Paystack calls this when a transaction completes, as a more reliable
- * backup to the customer's browser redirect landing on /payments/callback.
- * Both paths call the same `verifyPaymentAction`, which re-checks with
- * Paystack directly and is idempotent — so it is safe if both fire.
+ * Reliable, session-free Paystack confirmation. The HMAC is checked against
+ * the unmodified request body, then the transaction is independently fetched
+ * from Paystack before any payment or task status is changed.
  */
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   const signature = request.headers.get('x-paystack-signature')
 
-  const valid = await verifyPaystackSignature(rawBody, signature).catch((error) => {
+  try {
+    if (!(await verifyPaystackSignature(rawBody, signature))) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+  } catch (error) {
     logError('webhooks.paystack.signature', error)
-    return false
-  })
+    return NextResponse.json({ error: 'Signature verification failed' }, { status: 500 })
+  }
 
-  if (!valid) {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  let event: PaystackEvent
+  try {
+    event = JSON.parse(rawBody) as PaystackEvent
+  } catch (error) {
+    logError('webhooks.paystack.parse', error)
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  }
+
+  if (event.event !== 'charge.success') {
+    return NextResponse.json({ received: true, ignored: true })
+  }
+
+  const parsed = verifyPaymentSchema.safeParse({ reference: event.data?.reference })
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Missing payment reference' }, { status: 400 })
   }
 
   try {
-    const event = JSON.parse(rawBody) as { event?: string; data?: { reference?: string } }
-    const reference = event.data?.reference
-
-    if (event.event === 'charge.success' && reference) {
-      // verifyPaymentAction is written for a signed-in caller (the browser
-      // redirect to /payments/callback, which always has a session) and is
-      // idempotent, so that path is what actually confirms payment today.
-      // This webhook is kept as a best-effort second signal for future
-      // hardening — e.g. a service-role verification helper — without
-      // blocking the MVP on it; failures here are logged and swallowed.
-      await verifyPaymentAction(reference).catch((error) => {
-        logError('webhooks.paystack.verify', error, { reference })
-      })
-    }
+    const result = await verifyAndRecordPayment(parsed.data.reference)
+    return NextResponse.json({ received: true, status: result.status })
   } catch (error) {
-    logError('webhooks.paystack.parse', error)
+    // A non-2xx response asks Paystack to retry instead of permanently losing
+    // confirmation during a temporary database or network failure.
+    logError('webhooks.paystack.verify', error, { reference: parsed.data.reference })
+    return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 })
   }
-
-  // Always 200 — Paystack retries aggressively on non-2xx responses.
-  return NextResponse.json({ received: true })
 }
