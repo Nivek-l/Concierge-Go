@@ -11,8 +11,14 @@ import {
 } from './types'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const DEFAULT_MODEL =
-  process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free'
+
+const CHAT_MODEL =
+  process.env.OPENROUTER_CHAT_MODEL || 'openrouter/free'
+
+const DRAFT_MODEL =
+  process.env.OPENROUTER_DRAFT_MODEL ||
+  'google/gemma-4-26b-a4b-it:free'
+
 const TIMEOUT_MS = 45_000
 
 const CATEGORY_GUIDE = `
@@ -93,17 +99,23 @@ interface OpenRouterResponse {
 
 function getApiKey() {
   const value = process.env.OPENROUTER_API_KEY
+
   if (!value) {
     throw new Error(
       'Missing OPENROUTER_API_KEY. Add it to your Vercel environment variables.',
     )
   }
+
   return value
 }
 
 async function callOpenRouter(
   messages: AiChatMessage[],
-  options: { json?: boolean; maxTokens?: number } = {},
+  options: {
+    json?: boolean
+    maxTokens?: number
+    model?: string
+  } = {},
 ): Promise<string> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
@@ -116,31 +128,45 @@ async function callOpenRouter(
         Authorization: `Bearer ${getApiKey()}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://conciege-go-web.vercel.app',
+        'HTTP-Referer':
+          process.env.NEXT_PUBLIC_APP_URL ||
+          'https://conciege-go-web.vercel.app',
         'X-OpenRouter-Title': 'Concierge-Go',
       },
       body: JSON.stringify({
-        model: DEFAULT_MODEL,
+        model: options.model || CHAT_MODEL,
         messages,
         max_tokens: options.maxTokens ?? 900,
         ...(options.json
-          ? { response_format: { type: 'json_object' } }
+          ? {
+              response_format: {
+                type: 'json_object',
+              },
+            }
           : {}),
       }),
     })
 
-    const contentType = response.headers.get('content-type') || 'unknown'
+    const contentType =
+      response.headers.get('content-type') || 'unknown'
+
     const raw = await response.text()
 
     if (!response.ok) {
       throw new Error(
-        `OpenRouter returned ${response.status}; type=${contentType}; body=${raw.slice(0, 300)}`,
+        `OpenRouter returned ${response.status}; type=${contentType}; body=${raw.slice(
+          0,
+          300,
+        )}`,
       )
     }
 
     if (!contentType.includes('application/json')) {
       throw new Error(
-        `OpenRouter returned non-JSON content; status=${response.status}; type=${contentType}; url=${response.url}; body=${raw.slice(0, 300)}`,
+        `OpenRouter returned non-JSON content; status=${response.status}; type=${contentType}; url=${response.url}; body=${raw.slice(
+          0,
+          300,
+        )}`,
       )
     }
 
@@ -150,15 +176,22 @@ async function callOpenRouter(
       payload = JSON.parse(raw) as OpenRouterResponse
     } catch {
       throw new Error(
-        `OpenRouter returned invalid JSON; status=${response.status}; body=${raw.slice(0, 300)}`,
+        `OpenRouter returned invalid JSON; status=${response.status}; body=${raw.slice(
+          0,
+          300,
+        )}`,
       )
     }
 
-    const text = payload.choices?.[0]?.message?.content?.trim()
+    const text =
+      payload.choices?.[0]?.message?.content?.trim()
 
     if (!text) {
       throw new Error(
-        `OpenRouter returned no assistant message; body=${raw.slice(0, 300)}`,
+        `OpenRouter returned no assistant message; body=${raw.slice(
+          0,
+          300,
+        )}`,
       )
     }
 
@@ -168,7 +201,9 @@ async function callOpenRouter(
   }
 }
 
-function parseJsonObject(text: string): Record<string, unknown> {
+function parseJsonObject(
+  text: string,
+): Record<string, unknown> {
   const trimmed = text
     .trim()
     .replace(/^```(?:json)?/i, '')
@@ -177,67 +212,151 @@ function parseJsonObject(text: string): Record<string, unknown> {
 
   const parsed = JSON.parse(trimmed) as unknown
 
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('OpenRouter did not return a JSON object.')
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    Array.isArray(parsed)
+  ) {
+    throw new Error(
+      'OpenRouter did not return a JSON object.',
+    )
   }
 
   return parsed as Record<string, unknown>
 }
 
-export async function chatWithOpenRouter(history: AiChatMessage[]): Promise<string> {
+export async function chatWithOpenRouter(
+  history: AiChatMessage[],
+): Promise<string> {
   const safeHistory = history
-    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .filter(
+      (message) =>
+        message.role === 'user' ||
+        message.role === 'assistant',
+    )
     .slice(-24)
-    .map((message) => ({ role: message.role, content: message.content.slice(0, 5000) }))
+    .map((message) => ({
+      role: message.role,
+      content: message.content.slice(0, 5000),
+    }))
 
   return callOpenRouter([
-    { role: 'system', content: CHAT_SYSTEM_PROMPT },
+    {
+      role: 'system',
+      content: CHAT_SYSTEM_PROMPT,
+    },
     ...safeHistory,
   ])
 }
 
-function nullableString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() ? value.trim() : null
+function nullableString(
+  value: unknown,
+): string | null {
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : null
 }
 
-function cleanText(value: unknown, max: number) {
-  return typeof value === 'string' ? value.trim().slice(0, max) : ''
+function cleanText(
+  value: unknown,
+  max: number,
+): string {
+  return typeof value === 'string'
+    ? value.trim().slice(0, max)
+    : ''
 }
 
-export async function createTaskDraftFromChat(history: AiChatMessage[]): Promise<AiTaskDraft> {
+export async function createTaskDraftFromChat(
+  history: AiChatMessage[],
+): Promise<AiTaskDraft> {
   const conversation = history
-    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .filter(
+      (message) =>
+        message.role === 'user' ||
+        message.role === 'assistant',
+    )
     .slice(-30)
-    .map((message) => ({ role: message.role, content: message.content.slice(0, 5000) }))
+    .map((message) => ({
+      role: message.role,
+      content: message.content.slice(0, 5000),
+    }))
 
-  const nigeriaDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date())
+  const nigeriaDate = new Intl.DateTimeFormat(
+    'en-CA',
+    {
+      timeZone: 'Africa/Lagos',
+    },
+  ).format(new Date())
+
   const raw = await callOpenRouter(
-    [{ role: 'system', content: `${DRAFT_SYSTEM_PROMPT}\nCurrent date in Nigeria: ${nigeriaDate}. Resolve relative dates like tomorrow against this date.` }, ...conversation],
-    { json: true, maxTokens: 1400 },
+    [
+      {
+        role: 'system',
+        content: `${DRAFT_SYSTEM_PROMPT}
+Current date in Nigeria: ${nigeriaDate}.
+Resolve relative dates like tomorrow against this date.`,
+      },
+      ...conversation,
+    ],
+    {
+      json: true,
+      maxTokens: 1400,
+      model: DRAFT_MODEL,
+    },
   )
+
   const value = parseJsonObject(raw)
 
   const categorySlug =
-    typeof value.categorySlug === 'string' && value.categorySlug in CATEGORY_NAMES
+    typeof value.categorySlug === 'string' &&
+    value.categorySlug in CATEGORY_NAMES
       ? value.categorySlug
       : 'other'
+
   const urgency =
-    value.urgency === 'urgent' || value.urgency === 'priority' ? value.urgency : 'standard'
+    value.urgency === 'urgent' ||
+    value.urgency === 'priority'
+      ? value.urgency
+      : 'standard'
 
   return {
     title: cleanText(value.title, 140),
     description: cleanText(value.description, 4000),
     categorySlug,
     urgency,
-    citySlug: cleanText(value.citySlug, 80) || 'calabar',
-    locationAddress: cleanText(value.locationAddress, 300),
-    locationArea: nullableString(value.locationArea)?.slice(0, 120) ?? null,
-    locationLandmark: nullableString(value.locationLandmark)?.slice(0, 160) ?? null,
-    destinationRequired: value.destinationRequired === true,
-    destinationAddress: nullableString(value.destinationAddress)?.slice(0, 300) ?? null,
-    destinationArea: nullableString(value.destinationArea)?.slice(0, 120) ?? null,
+    citySlug:
+      cleanText(value.citySlug, 80) || 'calabar',
+    locationAddress: cleanText(
+      value.locationAddress,
+      300,
+    ),
+    locationArea:
+      nullableString(value.locationArea)?.slice(
+        0,
+        120,
+      ) ?? null,
+    locationLandmark:
+      nullableString(value.locationLandmark)?.slice(
+        0,
+        160,
+      ) ?? null,
+    destinationRequired:
+      value.destinationRequired === true,
+    destinationAddress:
+      nullableString(value.destinationAddress)?.slice(
+        0,
+        300,
+      ) ?? null,
+    destinationArea:
+      nullableString(value.destinationArea)?.slice(
+        0,
+        120,
+      ) ?? null,
     preferredDate:
-      typeof value.preferredDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.preferredDate)
+      typeof value.preferredDate === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(
+        value.preferredDate,
+      )
         ? value.preferredDate
         : null,
     preferredTimeSlot:
@@ -251,14 +370,25 @@ export async function createTaskDraftFromChat(history: AiChatMessage[]): Promise
         ? value.preferredTimeSlot
         : null,
     budgetNaira:
-      typeof value.budgetNaira === 'number' && Number.isFinite(value.budgetNaira) && value.budgetNaira >= 0
+      typeof value.budgetNaira === 'number' &&
+      Number.isFinite(value.budgetNaira) &&
+      value.budgetNaira >= 0
         ? Math.round(value.budgetNaira)
         : null,
-    additionalInstructions: nullableString(value.additionalInstructions)?.slice(0, 2000) ?? null,
+    additionalInstructions:
+      nullableString(
+        value.additionalInstructions,
+      )?.slice(0, 2000) ?? null,
     summary: cleanText(value.summary, 700),
-    missingFields: Array.isArray(value.missingFields)
+    missingFields: Array.isArray(
+      value.missingFields,
+    )
       ? value.missingFields
-          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .filter(
+            (item): item is string =>
+              typeof item === 'string' &&
+              item.trim().length > 0,
+          )
           .map((item) => item.trim())
           .slice(0, 8)
       : [],
@@ -270,35 +400,66 @@ function coerceInterpretation(
   fallback: TaskInterpretation,
 ): TaskInterpretation {
   const slug =
-    typeof value.categorySlug === 'string' && value.categorySlug in CATEGORY_NAMES
+    typeof value.categorySlug === 'string' &&
+    value.categorySlug in CATEGORY_NAMES
       ? value.categorySlug
       : fallback.categorySlug
+
   const complexity =
-    value.complexity === 'low' || value.complexity === 'medium' || value.complexity === 'high'
+    value.complexity === 'low' ||
+    value.complexity === 'medium' ||
+    value.complexity === 'high'
       ? value.complexity
       : fallback.complexity
+
   const urgency =
-    value.suggestedUrgency === 'priority' || value.suggestedUrgency === 'urgent'
+    value.suggestedUrgency === 'priority' ||
+    value.suggestedUrgency === 'urgent'
       ? value.suggestedUrgency
       : 'standard'
-  const actions = Array.isArray(value.suggestedActions)
-    ? value.suggestedActions.filter((item): item is string => typeof item === 'string').slice(0, 5)
+
+  const actions = Array.isArray(
+    value.suggestedActions,
+  )
+    ? value.suggestedActions
+        .filter(
+          (item): item is string =>
+            typeof item === 'string',
+        )
+        .slice(0, 5)
     : fallback.suggestedActions
+
   const notes = Array.isArray(value.notes)
-    ? value.notes.filter((item): item is string => typeof item === 'string').slice(0, 6)
+    ? value.notes
+        .filter(
+          (item): item is string =>
+            typeof item === 'string',
+        )
+        .slice(0, 6)
     : fallback.notes
 
   return {
     provider: 'openrouter',
     categorySlug: slug,
-    categoryName: CATEGORY_NAMES[slug] ?? 'Other',
-    taskSummary: cleanText(value.taskSummary, 80) || fallback.taskSummary,
-    suggestedActions: actions.length ? actions : fallback.suggestedActions,
+    categoryName:
+      CATEGORY_NAMES[slug] ?? 'Other',
+    taskSummary:
+      cleanText(value.taskSummary, 80) ||
+      fallback.taskSummary,
+    suggestedActions:
+      actions.length > 0
+        ? actions
+        : fallback.suggestedActions,
     complexity,
-    requiresProof: typeof value.requiresProof === 'boolean' ? value.requiresProof : fallback.requiresProof,
+    requiresProof:
+      typeof value.requiresProof === 'boolean'
+        ? value.requiresProof
+        : fallback.requiresProof,
     suggestedUrgency: urgency,
     confidence:
-      typeof value.confidence === 'number' && value.confidence >= 0 && value.confidence <= 1
+      typeof value.confidence === 'number' &&
+      value.confidence >= 0 &&
+      value.confidence <= 1
         ? Number(value.confidence.toFixed(2))
         : fallback.confidence,
     notes,
@@ -308,26 +469,48 @@ function coerceInterpretation(
 
 export const openRouterInterpreter: TaskInterpreter = {
   name: 'openrouter',
-  async interpret(input: InterpretTaskInput): Promise<TaskInterpretation> {
-    const fallback = await deterministicInterpreter.interpret(input)
+
+  async interpret(
+    input: InterpretTaskInput,
+  ): Promise<TaskInterpretation> {
+    const fallback =
+      await deterministicInterpreter.interpret(input)
+
     const raw = await callOpenRouter(
       [
-        { role: 'system', content: INTERPRET_SYSTEM_PROMPT },
+        {
+          role: 'system',
+          content: INTERPRET_SYSTEM_PROMPT,
+        },
         {
           role: 'user',
           content: [
-            input.title ? `Title: ${input.title}` : null,
+            input.title
+              ? `Title: ${input.title}`
+              : null,
             `Description: ${input.description}`,
-            input.categorySlug ? `Customer selected category: ${input.categorySlug}` : null,
-            input.city ? `City: ${input.city}` : null,
+            input.categorySlug
+              ? `Customer selected category: ${input.categorySlug}`
+              : null,
+            input.city
+              ? `City: ${input.city}`
+              : null,
             'Return the result as JSON.',
           ]
             .filter(Boolean)
             .join('\n'),
         },
       ],
-      { json: true, maxTokens: 700 },
+      {
+        json: true,
+        maxTokens: 700,
+        model: DRAFT_MODEL,
+      },
     )
-    return coerceInterpretation(parseJsonObject(raw), fallback)
+
+    return coerceInterpretation(
+      parseJsonObject(raw),
+      fallback,
+    )
   },
 }
