@@ -280,10 +280,6 @@ export async function verifyPaymentAction(
       )
     }
 
-    revalidatePath(`/tasks/${taskId}`)
-    revalidatePath('/dashboard')
-    revalidatePath('/admin')
-
     return actionOk(
       { status: 'succeeded', taskId, amountKobo: expectedKobo },
       'Payment received. We are assigning a Go Agent.',
