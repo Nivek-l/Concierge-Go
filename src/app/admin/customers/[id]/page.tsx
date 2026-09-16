@@ -91,7 +91,7 @@ export default async function AdminCustomerDetailPage({
                             {task.reference} · {formatFriendlyDate(task.created_at)}
                           </p>
                         </div>
-                        <TaskStatusBadge status={task.status} />
+                        <TaskStatusBadge status={task.status} perspective="admin" />
                       </Link>
                     </li>
                   ))}
@@ -124,7 +124,7 @@ export default async function AdminCustomerDetailPage({
                   {profile.default_area ? `, ${profile.default_area}` : ''}
                 </p>
               ) : null}
-              <div className="grid grid-cols-2 gap-2 border-t pt-3">
+              <div className="grid gap-2 border-t pt-3 sm:grid-cols-2">
                 <div>
                   <p className="text-xs text-muted-foreground">Total spent</p>
                   <p className="font-medium">{formatNaira(totalSpentKobo)}</p>

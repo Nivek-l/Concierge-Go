@@ -125,7 +125,9 @@ export default async function AdminAgentDetailPage({
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {assignment.task ? <TaskStatusBadge status={assignment.task.status} /> : null}
+                        {assignment.task ? (
+                          <TaskStatusBadge status={assignment.task.status} perspective="admin" />
+                        ) : null}
                         <span className="text-xs font-medium text-muted-foreground">
                           {formatNaira(assignment.agent_payout_kobo)}
                         </span>

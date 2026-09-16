@@ -83,18 +83,18 @@ export default async function AdminTaskDetailPage({
             {task.reference} · {category.name} · Requested {formatFriendlyDate(task.created_at)}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <TaskStatusBadge status={task.status} />
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+          <TaskStatusBadge status={task.status} perspective="admin" />
           <TaskStatusOverride taskId={id} currentStatus={task.status} />
           {detail.assignment?.status === 'active' ? <ReleaseAssignmentButton taskId={id} /> : null}
         </div>
       </div>
 
-      <StatusExplainer status={task.status} />
+      <StatusExplainer status={task.status} perspective="admin" />
 
       {dispute ? (
         <Card className="border-destructive/30 bg-destructive-subtle/40">
-          <CardContent className="flex items-start justify-between gap-3 pt-5">
+          <CardContent className="flex flex-col items-stretch gap-3 pt-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden />
               <div>
@@ -238,8 +238,8 @@ export default async function AdminTaskDetailPage({
               <CardHeader>
                 <CardTitle>Payment</CardTitle>
               </CardHeader>
-              <CardContent className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
+              <CardContent className="flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <span className="break-all text-muted-foreground sm:break-normal">
                   {formatNaira(latestPayment.amount_kobo)} · {latestPayment.provider} ·{' '}
                   {latestPayment.reference}
                 </span>

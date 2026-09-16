@@ -127,14 +127,14 @@ export default async function AdminTasksPage({
                         <UrgencyBadge urgency={task.urgency} />
                         {task.has_open_dispute ? <Badge variant="danger">Disputed</Badge> : null}
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="mt-0.5 break-words text-xs text-muted-foreground">
                         {task.reference} · {task.customer_name} · {task.category_name}
                         {task.agent_name ? ` · ${task.agent_name}` : ''} ·{' '}
                         {formatFriendlyDate(task.created_at)}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-                      <TaskStatusBadge status={task.status} />
+                      <TaskStatusBadge status={task.status} perspective="admin" />
                       {task.total_kobo ? (
                         <span className="text-xs font-medium text-muted-foreground">
                           {formatNaira(task.total_kobo)}

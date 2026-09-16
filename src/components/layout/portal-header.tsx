@@ -37,8 +37,8 @@ export function PortalHeader({
 }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-      <div className="container flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
+      <div className="container flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-6">
           <Logo href={links[0]?.href ?? '/'} showWordmark={false} className="sm:hidden" />
           <Logo href={links[0]?.href ?? '/'} className="hidden sm:flex" />
           {eyebrow ? (
@@ -50,7 +50,7 @@ export function PortalHeader({
 
         <PortalNavLinks links={links} />
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <NotificationBell profileId={user.id} />
 
           <DropdownMenu>

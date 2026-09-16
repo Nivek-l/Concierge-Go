@@ -73,7 +73,7 @@ export default async function TaskDetailPage({
             {task.reference} · {category.name} · Requested {formatFriendlyDate(task.created_at)}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <TaskStatusBadge status={task.status} />
           {CANCELLABLE.includes(task.status) ? <CancelTaskDialog taskId={id} /> : null}
         </div>
@@ -196,8 +196,8 @@ export default async function TaskDetailPage({
               <CardHeader>
                 <CardTitle>Payment</CardTitle>
               </CardHeader>
-              <CardContent className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
+              <CardContent className="flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <span className="break-words text-muted-foreground">
                   {formatNaira(latestPayment.amount_kobo)} · {latestPayment.provider}
                 </span>
                 <Badge

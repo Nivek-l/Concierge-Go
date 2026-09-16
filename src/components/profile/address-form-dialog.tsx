@@ -81,7 +81,7 @@ export function AddressFormDialog({
             )}
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field name="citySlug" label="City" required>
               {() => (
                 <Select
@@ -114,7 +114,7 @@ export function AddressFormDialog({
             )}
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field name="contactName" label="Contact name">
               {(props) => (
                 <Input {...props} name="contactName" defaultValue={address?.contact_name ?? ''} />

@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-dvh flex-col bg-muted/20">
       <PortalHeader user={user} links={LINKS} profileHref="/profile" eyebrow="Operations" />
-      <main id="main" className="container flex-1 py-8 sm:py-10">
+      <main id="main" className="container w-full min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         {children}
       </main>
     </div>

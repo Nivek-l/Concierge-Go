@@ -47,7 +47,7 @@ const TONE_DOT: Record<StatusTone, string> = {
 interface TaskStatusBadgeProps {
   status: TaskStatus
   /** Agent surfaces use the agent-facing wording. */
-  perspective?: 'customer' | 'agent'
+  perspective?: 'customer' | 'agent' | 'admin'
   showDot?: boolean
   className?: string
 }
@@ -152,12 +152,20 @@ export function DisputeStatusBadge({
  */
 export function StatusExplainer({
   status,
+  perspective = 'customer',
   className,
 }: {
   status: TaskStatus
+  perspective?: 'customer' | 'agent' | 'admin'
   className?: string
 }) {
   const meta = TASK_STATUS_META[status]
+  const content =
+    perspective === 'admin'
+      ? { headline: meta.adminHeadline, next: meta.adminNext }
+      : perspective === 'agent'
+        ? { headline: meta.agentHeadline, next: meta.agentNext }
+        : { headline: meta.customerHeadline, next: meta.customerNext }
 
   const toneClasses: Record<StatusTone, string> = {
     neutral: 'border-border bg-muted/50',
@@ -171,9 +179,9 @@ export function StatusExplainer({
   return (
     <div className={cn('rounded-xl border p-4 sm:p-5', toneClasses[meta.tone], className)}>
       <p className="font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
-        {meta.customerHeadline}
+        {content.headline}
       </p>
-      <p className="mt-1 text-sm text-muted-foreground text-pretty">{meta.customerNext}</p>
+      <p className="mt-1 text-sm text-muted-foreground text-pretty">{content.next}</p>
     </div>
   )
 }

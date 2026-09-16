@@ -65,10 +65,12 @@ export default async function AgentTaskDetailPage({
             {task.reference} · {category.name}
           </p>
         </div>
-        <TaskStatusBadge status={task.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <TaskStatusBadge status={task.status} perspective="agent" />
+        </div>
       </div>
 
-      <StatusExplainer status={task.status} />
+      <StatusExplainer status={task.status} perspective="agent" />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">

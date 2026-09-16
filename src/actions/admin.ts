@@ -417,6 +417,18 @@ export async function adminUpdateTaskStatusAction(
 
     if (error) throw error
 
+    // A completed assignment remains in history for earnings and ratings, but
+    // is no longer active and therefore immediately frees the agent's workload.
+    if (status === 'completed') {
+      const { error: assignmentError } = await supabase
+        .from('task_assignments')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('task_id', taskId)
+        .eq('status', 'active')
+
+      if (assignmentError) throw assignmentError
+    }
+
     if (status === 'cancelled') {
       const recipients: Array<{ profileId: string; role: 'customer' | 'agent' }> = [
         { profileId: task.customer_id, role: 'customer' },
@@ -466,6 +478,8 @@ export async function adminUpdateTaskStatusAction(
     revalidatePath(`/admin/tasks/${taskId}`)
     revalidatePath('/admin')
     revalidatePath(`/tasks/${taskId}`)
+    revalidatePath(`/agent/tasks/${taskId}`)
+    revalidatePath('/agent')
     return actionOk({ status }, 'Task updated.')
   } catch (error) {
     logError('admin.updateTaskStatus', error, { taskId, status })

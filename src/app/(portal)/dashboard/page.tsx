@@ -64,7 +64,7 @@ export default async function DashboardPage() {
               <Link
                 key={task.id}
                 href={`/tasks/${task.id}`}
-                className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 transition-colors hover:border-primary/40"
+                className="flex flex-col items-start gap-2 rounded-lg border bg-card px-4 py-3 transition-colors hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="text-sm font-semibold">{task.title}</p>
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
                   <li key={task.id}>
                     <Link
                       href={`/tasks/${task.id}`}
-                      className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:opacity-80"
+                    className="flex flex-col items-start gap-2 py-3.5 transition-colors hover:opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
                           {formatFriendlyDate(task.preferred_date)}
                         </p>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
+                      <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
                         <TaskStatusBadge status={task.status} />
                         {task.total_kobo ? (
                           <span className="text-xs text-muted-foreground">

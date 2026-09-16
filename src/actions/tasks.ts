@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { requireCustomerAction, requireUserAction } from '@/lib/auth'
 import { AppError, ERROR_MESSAGES, logError, toUserMessage } from '@/lib/errors'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import {
   cancelTaskSchema,
@@ -311,20 +312,28 @@ export async function confirmCompletionAction(
       .eq('status', 'active')
       .maybeSingle()
 
-    const { error } = await supabase
+    const completedAt = new Date().toISOString()
+    const admin = createAdminClient()
+    const { data: completedTask, error } = await admin
       .from('tasks')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .update({ status: 'completed', completed_at: completedAt })
       .eq('id', taskId)
+      .eq('status', 'awaiting_confirmation')
+      .select('id')
+      .maybeSingle()
 
     if (error) throw error
+    if (!completedTask) return actionError('This task has already been updated.')
 
     let agentProfileId: string | null = null
 
     if (assignment) {
-      await supabase
+      const { error: assignmentError } = await admin
         .from('task_assignments')
-        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .update({ status: 'completed', completed_at: completedAt })
         .eq('id', assignment.id as string)
+
+      if (assignmentError) throw assignmentError
 
       const { data: agent } = await supabase
         .from('agents')
@@ -351,6 +360,10 @@ export async function confirmCompletionAction(
 
     revalidatePath(`/tasks/${taskId}`)
     revalidatePath('/dashboard')
+    revalidatePath(`/agent/tasks/${taskId}`)
+    revalidatePath('/agent')
+    revalidatePath(`/admin/tasks/${taskId}`)
+    revalidatePath('/admin')
     return actionOk({ taskId }, 'Task confirmed as complete. Thank you.')
   } catch (error) {
     logError('tasks.confirmCompletion', error, { taskId })
