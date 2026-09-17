@@ -12,7 +12,7 @@
 
 > Your trusted pair of hands, anywhere.
 
-[![Live Website](https://img.shields.io/badge/Live%20Website-Visit%20Concierge--Go-blue?style=for-the-badge)](YOUR-WEBSITE-URL-HERE)
+[![Live Website](https://img.shields.io/badge/Live%20Website-Visit%20Concierge--Go-blue?style=for-the-badge)](https://conciergego.vercel.app)
 
 Concierge-Go is a local task and service-execution platform that helps people get real-world tasks completed by verified local agents.
 
@@ -26,7 +26,7 @@ The platform is designed to launch in Calabar, Nigeria, with an architecture tha
 
 ## 🌐 Live Website
 
-**[Visit Concierge-Go →](YOUR-WEBSITE-URL-HERE)**
+**[Visit Concierge-Go →](https://conciergego.vercel.app)**
 
 > Replace `YOUR-WEBSITE-URL-HERE` with the URL of your deployed PWA.
 
@@ -439,5 +439,8 @@ The project is intended to serve as the foundation for the Concierge-Go customer
 
 ## License
 
-Add the project's applicable license here.
+Copyright © 2026 Kevin Iseh-Ntah. All rights reserved.
 
+This repository is available for evaluation and demonstration purposes only.
+Commercial use, redistribution, modification, deployment, or reproduction
+without written permission is prohibited. See the LICENSE file for details.
