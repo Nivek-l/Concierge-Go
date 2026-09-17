@@ -28,8 +28,6 @@ The platform is designed to launch in Calabar, Nigeria, with an architecture tha
 
 **[Visit Concierge-Go →](https://conciergego.vercel.app)**
 
-> Replace `YOUR-WEBSITE-URL-HERE` with the URL of your deployed PWA.
-
 ---
 
 ## What Problem Does Concierge-Go Solve?
@@ -427,6 +425,7 @@ Alternative brand message:
 Next.js (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Supabase (Postgres, Auth, Storage)
 · Zod · React Hook Form · Lucide icons — deployed to Vercel, no persistent server state, no
 filesystem database.
+
 ---
 
 ## Repository
