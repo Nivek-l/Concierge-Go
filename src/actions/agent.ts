@@ -331,8 +331,13 @@ export async function updateAgentProfileAction(
       .eq('slug', parsed.data.citySlug)
       .maybeSingle()
 
+    const { error: deleteAreasError } = await supabase
+      .from('agent_service_areas')
+      .delete()
+      .eq('agent_id', user.agent.id)
+    if (deleteAreasError) throw deleteAreasError
+
     if (city && parsed.data.serviceAreas.length > 0) {
-      await supabase.from('agent_service_areas').delete().eq('agent_id', user.agent.id)
       const { error: areaError } = await supabase.from('agent_service_areas').insert(
         parsed.data.serviceAreas.map((area) => ({
           agent_id: user.agent.id,
@@ -340,7 +345,7 @@ export async function updateAgentProfileAction(
           area_name: area,
         })),
       )
-      if (areaError) logError('agent.updateProfile.areas', areaError)
+      if (areaError) throw areaError
     }
 
     revalidatePath('/agent/profile')

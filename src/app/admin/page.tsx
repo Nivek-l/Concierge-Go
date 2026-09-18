@@ -12,6 +12,7 @@ import {
 
 import { requireAdmin } from '@/lib/auth'
 import { getAdminStats, getOperationsQueue, getRecentActivity } from '@/database/admin'
+import { getPayoutLedger } from '@/database/payouts'
 import { formatFriendlyDate, formatNaira } from '@/lib/format'
 import { TASK_STATUS_META } from '@/lib/constants'
 import { Badge } from '@/components/ui/badge'
@@ -24,10 +25,11 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboardPage() {
   await requireAdmin()
-  const [stats, queue, activity] = await Promise.all([
+  const [stats, queue, activity, payouts] = await Promise.all([
     getAdminStats(),
     getOperationsQueue(),
     getRecentActivity(10),
+    getPayoutLedger({ limit: 100 }),
   ])
 
   return (
@@ -63,13 +65,14 @@ export default async function AdminDashboardPage() {
         />
         <StatCard
           icon={CreditCard}
-          label="Platform fees"
-          value={formatNaira(stats?.platform_fees_kobo ?? 0)}
+          label="Concierge Go share"
+          value={formatNaira(Math.round((stats?.platform_fees_kobo ?? 0) * 0.2))}
         />
         <StatCard
           icon={Banknote}
-          label="Agent payouts"
-          value={formatNaira(stats?.agent_payouts_kobo ?? 0)}
+          label="Pending payouts"
+          value={formatNaira(payouts.pendingKobo + payouts.approvedKobo)}
+          sub={`${formatNaira(payouts.paidKobo)} recorded paid`}
         />
         <StatCard
           icon={AlertTriangle}
@@ -77,6 +80,12 @@ export default async function AdminDashboardPage() {
           value={String(stats?.open_disputes ?? 0)}
           tone={stats?.open_disputes ? 'warning' : undefined}
         />
+      </div>
+
+      <div className="flex justify-end">
+        <Link href="/admin/payouts" className="text-sm font-medium text-primary hover:underline">
+          Open payout ledger
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -89,7 +98,7 @@ export default async function AdminDashboardPage() {
         <QueueCard
           title="Quotes awaiting response"
           count={stats?.quotes_awaiting_response ?? 0}
-          items={queue.awaitingPayment}
+          items={queue.awaitingQuoteResponse}
           href="/admin/tasks?status=quoted"
         />
         <QueueCard

@@ -328,13 +328,6 @@ export async function confirmCompletionAction(
     let agentProfileId: string | null = null
 
     if (assignment) {
-      const { error: assignmentError } = await admin
-        .from('task_assignments')
-        .update({ status: 'completed', completed_at: completedAt })
-        .eq('id', assignment.id as string)
-
-      if (assignmentError) throw assignmentError
-
       const { data: agent } = await supabase
         .from('agents')
         .select('profile_id')

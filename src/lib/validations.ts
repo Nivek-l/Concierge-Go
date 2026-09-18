@@ -6,6 +6,7 @@ import {
   PROOF_TYPES,
   TASK_URGENCIES,
   VERIFICATION_STATUSES,
+  PAYOUT_STATUSES,
 } from '@/types/database'
 
 /* -------------------------------------------------------------------------- */
@@ -206,7 +207,6 @@ export const createQuoteSchema = z
     additionalFeeNaira: nairaAmountSchema.default(0),
     additionalFeeNote: optionalText(240),
     platformFeeNaira: nairaAmountSchema,
-    agentPayoutNaira: nairaAmountSchema,
     notes: optionalText(1000),
     expiresInHours: z.coerce.number().int().min(1).max(168).default(48),
   })
@@ -218,15 +218,6 @@ export const createQuoteSchema = z
     message: 'Explain what the additional charge covers.',
     path: ['additionalFeeNote'],
   })
-  .refine(
-    (data) =>
-      data.agentPayoutNaira <=
-      data.serviceFeeNaira + data.transportFeeNaira + data.additionalFeeNaira,
-    {
-      message: 'The agent payout cannot exceed the service, transport and additional charges.',
-      path: ['agentPayoutNaira'],
-    },
-  )
 export type CreateQuoteInput = z.input<typeof createQuoteSchema>
 
 export const respondToQuoteSchema = z.object({
@@ -407,6 +398,18 @@ export const suspendAccountSchema = z.object({
   suspended: z.boolean(),
   reason: optionalText(500),
 })
+
+export const updatePayoutSchema = z
+  .object({
+    payoutId: uuidSchema,
+    status: z.enum(PAYOUT_STATUSES),
+    paymentReference: optionalText(160),
+    note: optionalText(500),
+  })
+  .refine(
+    (data) => data.status !== 'paid' || Boolean(data.paymentReference),
+    { message: 'Add the transfer or payment reference.', path: ['paymentReference'] },
+  )
 
 export const taskFilterSchema = z.object({
   status: z.string().optional(),

@@ -216,21 +216,21 @@ export async function getAdminTasks(filters: AdminTaskFilters = {}): Promise<Adm
 /** The operations work queue: what needs a human, in priority order. */
 export async function getOperationsQueue(): Promise<{
   needsReview: TaskListItem[]
+  awaitingQuoteResponse: TaskListItem[]
   needsAssignment: TaskListItem[]
-  awaitingPayment: TaskListItem[]
   openDisputes: TaskListItem[]
 }> {
-  const [review, assignment, payment, disputes] = await Promise.all([
+  const [review, quoted, assignment, disputes] = await Promise.all([
     getAdminTasks({ status: 'submitted', pageSize: 6 }),
+    getAdminTasks({ status: 'quoted', pageSize: 6 }),
     getAdminTasks({ status: 'paid', pageSize: 6 }),
-    getAdminTasks({ status: 'awaiting_payment', pageSize: 6 }),
     getAdminTasks({ status: 'disputed', pageSize: 6 }),
   ])
 
   return {
     needsReview: review.tasks,
+    awaitingQuoteResponse: quoted.tasks,
     needsAssignment: assignment.tasks,
-    awaitingPayment: payment.tasks,
     openDisputes: disputes.tasks,
   }
 }

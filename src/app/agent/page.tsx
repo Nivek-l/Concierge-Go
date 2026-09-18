@@ -4,6 +4,7 @@ import { ArrowRight, Briefcase, CheckCircle2, ClipboardList, Star, Wallet } from
 
 import { requireAgent } from '@/lib/auth'
 import { getAgentStats, getAgentTasks } from '@/database/agents'
+import { getPayoutLedger } from '@/database/payouts'
 import { firstName, formatFriendlyDate, formatNaira } from '@/lib/format'
 import { AGENT_ACTION_LABEL } from '@/lib/constants'
 import { Badge } from '@/components/ui/badge'
@@ -20,9 +21,10 @@ export const metadata: Metadata = {
 
 export default async function AgentDashboardPage() {
   const user = await requireAgent()
-  const [stats, activeTasks] = await Promise.all([
+  const [stats, activeTasks, payouts] = await Promise.all([
     getAgentStats(),
     getAgentTasks(user.agent.id, { assignmentStatuses: ['active'] }),
+    getPayoutLedger({ agentId: user.agent.id, limit: 100 }),
   ])
 
   if (user.agent.verification_status !== 'verified') {
@@ -81,9 +83,9 @@ export default async function AgentDashboardPage() {
         <StatCard icon={CheckCircle2} label="Completed" value={String(stats?.completed_tasks ?? 0)} />
         <StatCard
           icon={Wallet}
-          label="Earned"
-          value={formatNaira(stats?.earnings_kobo ?? 0)}
-          sub={stats?.pending_earnings_kobo ? `${formatNaira(stats.pending_earnings_kobo)} pending` : undefined}
+          label="Paid earnings"
+          value={formatNaira(payouts.paidKobo)}
+          sub={`${formatNaira(payouts.pendingKobo + payouts.approvedKobo)} pending`}
         />
         <StatCard
           icon={Star}
@@ -91,6 +93,12 @@ export default async function AgentDashboardPage() {
           value={stats ? stats.rating.toFixed(1) : '—'}
           sub={stats ? `${stats.rating_count} reviews` : undefined}
         />
+      </div>
+
+      <div className="flex justify-end">
+        <Link href="/agent/earnings" className="text-sm font-medium text-primary hover:underline">
+          View full payout ledger
+        </Link>
       </div>
 
       <Card>

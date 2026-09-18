@@ -18,7 +18,7 @@ const FAQS = [
   {
     question: 'How much does a task cost?',
     answer:
-      'It depends on the task. A person reads your request and sends a quote broken into service fee, transport and platform fee. You see the full total before you decide, and nothing starts until you accept and pay.',
+      'It depends on the task. A person reads your request and sends a quote broken into service fee, transport and task execution fee. You see the full total before you decide, and nothing starts until you accept and pay.',
   },
   {
     question: 'How fast will my task be done?',
@@ -128,7 +128,7 @@ export default function HowItWorksPage() {
                   <dd className="font-medium tabular-nums">{formatNaira(100000)}</dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-muted-foreground">Platform fee</dt>
+                  <dt className="text-muted-foreground">Task execution fee</dt>
                   <dd className="font-medium tabular-nums">{formatNaira(30000)}</dd>
                 </div>
               </dl>

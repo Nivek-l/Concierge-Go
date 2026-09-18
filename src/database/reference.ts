@@ -1,9 +1,11 @@
 import 'server-only'
 
 import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 import { logError } from '@/lib/errors'
-import { createClient } from '@/lib/supabase/server'
+import { publicEnv } from '@/lib/env'
 import type { CityRow, TaskCategoryRow } from '@/types/database'
 
 /**
@@ -14,9 +16,12 @@ import type { CityRow, TaskCategoryRow } from '@/types/database'
  * and /services use them).
  */
 
-export const getCities = cache(async (): Promise<CityRow[]> => {
+const getCitiesCached = unstable_cache(async (): Promise<CityRow[]> => {
   try {
-    const supabase = await createClient()
+    if (!publicEnv.supabaseUrl || !publicEnv.supabaseAnonKey) return []
+    const supabase = createSupabaseClient(publicEnv.supabaseUrl, publicEnv.supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
     const { data, error } = await supabase
       .from('cities')
       .select('*')
@@ -28,7 +33,9 @@ export const getCities = cache(async (): Promise<CityRow[]> => {
     logError('reference.getCities', error)
     return []
   }
-})
+}, ['concierge-reference-cities-v1'], { revalidate: 300, tags: ['reference-data'] })
+
+export const getCities = cache(getCitiesCached)
 
 export const getLiveCities = cache(async (): Promise<CityRow[]> => {
   const cities = await getCities()
@@ -40,9 +47,12 @@ export const getCityBySlug = cache(async (slug: string): Promise<CityRow | null>
   return cities.find((city) => city.slug === slug) ?? null
 })
 
-export const getCategories = cache(async (): Promise<TaskCategoryRow[]> => {
+const getCategoriesCached = unstable_cache(async (): Promise<TaskCategoryRow[]> => {
   try {
-    const supabase = await createClient()
+    if (!publicEnv.supabaseUrl || !publicEnv.supabaseAnonKey) return []
+    const supabase = createSupabaseClient(publicEnv.supabaseUrl, publicEnv.supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
     const { data, error } = await supabase
       .from('task_categories')
       .select('*')
@@ -55,7 +65,9 @@ export const getCategories = cache(async (): Promise<TaskCategoryRow[]> => {
     logError('reference.getCategories', error)
     return []
   }
-})
+}, ['concierge-reference-categories-v1'], { revalidate: 300, tags: ['reference-data'] })
+
+export const getCategories = cache(getCategoriesCached)
 
 export const getCategoryBySlug = cache(async (slug: string): Promise<TaskCategoryRow | null> => {
   const categories = await getCategories()

@@ -4,6 +4,7 @@ import { PortalHeader } from '@/components/layout/portal-header'
 const LINKS = [
   { href: '/agent', label: 'Dashboard' },
   { href: '/agent/available', label: 'Available tasks' },
+  { href: '/agent/earnings', label: 'Earnings' },
   { href: '/agent/profile', label: 'Agent profile' },
 ]
 

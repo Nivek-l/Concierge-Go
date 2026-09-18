@@ -48,7 +48,7 @@ export function QuotePanel({ taskId, quote }: { taskId: string; quote: TaskQuote
   if (quote.additional_fee_kobo > 0) {
     lines.push([quote.additional_fee_note ?? 'Additional charges', quote.additional_fee_kobo])
   }
-  lines.push(['Platform fee', quote.platform_fee_kobo])
+  lines.push(['Task execution fee', quote.platform_fee_kobo])
 
   return (
     <Card className="border-warning/30 bg-warning-subtle/40">

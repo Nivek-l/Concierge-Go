@@ -99,7 +99,13 @@ function FileTile({
 
   const content = isImage(mimeType) && url ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt={fileName ?? 'Attachment'} className="h-24 w-full rounded-lg object-cover" />
+    <img
+      src={url}
+      alt={fileName ?? 'Attachment'}
+      loading="lazy"
+      decoding="async"
+      className="h-24 w-full rounded-lg object-cover"
+    />
   ) : (
     <div className="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border bg-muted/40">
       <Icon className="h-6 w-6 text-muted-foreground" aria-hidden />

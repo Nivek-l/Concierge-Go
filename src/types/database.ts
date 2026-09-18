@@ -77,6 +77,9 @@ export type AttachmentKind = 'request' | 'dispute'
 
 export type AssignmentStatus = 'active' | 'released' | 'reassigned' | 'completed'
 
+export const PAYOUT_STATUSES = ['pending', 'approved', 'paid', 'held', 'cancelled'] as const
+export type PayoutStatus = (typeof PAYOUT_STATUSES)[number]
+
 export const NOTIFICATION_TYPES = [
   'task_submitted',
   'task_reviewed',
@@ -331,6 +334,24 @@ export interface TaskAssignmentRow {
   released_at: string | null
   release_reason: string | null
   completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AgentPayoutRow {
+  id: string
+  assignment_id: string
+  task_id: string
+  agent_id: string
+  amount_kobo: number
+  status: PayoutStatus
+  available_at: string
+  approved_by: string | null
+  approved_at: string | null
+  paid_by: string | null
+  paid_at: string | null
+  payment_reference: string | null
+  note: string | null
   created_at: string
   updated_at: string
 }

@@ -21,14 +21,13 @@ export function QuoteForm({
   suggested,
 }: {
   taskId: string
-  suggested?: { serviceFeeNaira: number; transportFeeNaira: number; platformFeeNaira: number; agentPayoutNaira: number }
+  suggested?: { serviceFeeNaira: number; transportFeeNaira: number; platformFeeNaira: number }
 }) {
   const router = useRouter()
   const [serviceFee, setServiceFee] = useState(String(suggested?.serviceFeeNaira ?? ''))
   const [transportFee, setTransportFee] = useState(String(suggested?.transportFeeNaira ?? '1000'))
   const [additionalFee, setAdditionalFee] = useState('0')
   const [platformFee, setPlatformFee] = useState(String(suggested?.platformFeeNaira ?? ''))
-  const [agentPayout, setAgentPayout] = useState(String(suggested?.agentPayoutNaira ?? ''))
 
   const [state, formAction, isPending] = useActionState<CreateQuoteResult | null, FormData>(
     createQuoteAction,
@@ -45,6 +44,10 @@ export function QuoteForm({
   const totalKobo = useMemo(
     () => toKobo(serviceFee) + toKobo(transportFee) + toKobo(additionalFee) + toKobo(platformFee),
     [serviceFee, transportFee, additionalFee, platformFee],
+  )
+  const agentShareKobo = useMemo(
+    () => Math.round(toKobo(platformFee) * 0.8),
+    [platformFee],
   )
 
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined
@@ -99,7 +102,7 @@ export function QuoteForm({
             />
           )}
         </Field>
-        <Field name="platformFeeNaira" label="Platform fee (₦)" required error={fieldErrors?.platformFeeNaira}>
+        <Field name="platformFeeNaira" label="Task execution fee (₦)" required error={fieldErrors?.platformFeeNaira}>
           {(props) => (
             <Input
               {...props}
@@ -119,20 +122,16 @@ export function QuoteForm({
         {(props) => <Input {...props} name="additionalFeeNote" placeholder="e.g. Parking / entry fee" />}
       </Field>
 
-      <Field name="agentPayoutNaira" label="Agent payout (₦)" required hint="What the assigned agent earns" error={fieldErrors?.agentPayoutNaira}>
-        {(props) => (
-          <Input
-            {...props}
-            name="agentPayoutNaira"
-            type="number"
-            min="0"
-            step="50"
-            value={agentPayout}
-            onChange={(e) => setAgentPayout(e.target.value)}
-            required
-          />
-        )}
-      </Field>
+      <div className="rounded-lg border bg-muted/40 p-3.5 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Go Agent share (80%)</span>
+          <span className="font-semibold">{formatNaira(agentShareKobo)}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-muted-foreground">
+          <span>Concierge Go share (20%)</span>
+          <span>{formatNaira(toKobo(platformFee) - agentShareKobo)}</span>
+        </div>
+      </div>
 
       <Field name="notes" label="Notes for the customer" hint="Optional">
         {(props) => <Textarea {...props} name="notes" rows={2} />}

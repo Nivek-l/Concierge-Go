@@ -19,7 +19,7 @@ const DRAFT_MODEL =
   process.env.OPENROUTER_DRAFT_MODEL ||
   'nex-agie/nex-n2.5-pro:free'
 
-const TIMEOUT_MS = 90_000
+const TIMEOUT_MS = 25_000
 
 const CATEGORY_GUIDE = `
 - documents-administration: collecting/submitting documents, government offices, schools, applications, follow-ups

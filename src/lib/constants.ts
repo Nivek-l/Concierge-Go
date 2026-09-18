@@ -463,7 +463,7 @@ export const TRUST_POINTS = [
   },
   {
     title: 'You see the price first',
-    body: 'A full breakdown — service, transport, platform fee — before you pay a naira.',
+    body: 'A full breakdown — service, transport and task execution fee — before you pay a naira.',
     icon: 'Wallet',
   },
   {
@@ -528,12 +528,13 @@ export type UploadKind = keyof typeof UPLOAD_LIMITS
 export const SIGNED_URL_TTL_SECONDS = 60 * 10
 
 /**
- * Platform fee model. Prices are always calculated or confirmed server-side —
+ * Task execution fee model. Prices are always calculated or confirmed server-side —
  * these values are the starting point operations sees in the quote builder.
  */
 export const PRICING = {
   platformFeeRate: 0.1,
   minPlatformFeeKobo: 20000, // ₦200
-  agentShareOfServiceFee: 0.75,
+  agentShareOfTaskExecutionFee: 0.8,
+  conciergeShareOfTaskExecutionFee: 0.2,
   transportBaseKobo: 100000, // ₦1,000 within Calabar
 } as const

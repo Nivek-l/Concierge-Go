@@ -17,7 +17,7 @@ import {
   reviewVerificationSchema,
   suspendAccountSchema,
 } from '@/lib/validations'
-import { computeTotal } from '@/services/pricing'
+import { computeTotal, suggestAgentPayout } from '@/services/pricing'
 import { notify, taskEvents } from '@/services/notifications'
 import { actionError, actionOk, type ActionResult } from '@/types/domain'
 import type { TaskRow, VerificationStatus } from '@/types/database'
@@ -91,7 +91,8 @@ export async function createQuoteAction(
         additional_fee_kobo: input.additionalFeeNaira,
         additional_fee_note: input.additionalFeeNote,
         platform_fee_kobo: input.platformFeeNaira,
-        agent_payout_kobo: input.agentPayoutNaira,
+        // The execution fee varies by task difficulty; its split does not.
+        agent_payout_kobo: suggestAgentPayout(input.platformFeeNaira),
         status: 'sent',
         notes: input.notes,
         expires_at: expiresAt,
@@ -200,6 +201,10 @@ export async function assignAgentAction(
 
     if (agent.verification_status !== 'verified') {
       return actionError('Only verified agents can be assigned a task.')
+    }
+
+    if (!agent.is_available) {
+      return actionError('That agent is currently unavailable for new tasks.')
     }
 
     const { count: activeCount } = await supabase
@@ -416,18 +421,6 @@ export async function adminUpdateTaskStatusAction(
       .eq('id', taskId)
 
     if (error) throw error
-
-    // A completed assignment remains in history for earnings and ratings, but
-    // is no longer active and therefore immediately frees the agent's workload.
-    if (status === 'completed') {
-      const { error: assignmentError } = await supabase
-        .from('task_assignments')
-        .update({ status: 'completed', completed_at: new Date().toISOString() })
-        .eq('task_id', taskId)
-        .eq('status', 'active')
-
-      if (assignmentError) throw assignmentError
-    }
 
     if (status === 'cancelled') {
       const recipients: Array<{ profileId: string; role: 'customer' | 'agent' }> = [
@@ -683,13 +676,6 @@ export async function resolveDisputeAction(
         .update({ status: finalTaskStatus, ...(timestamps[finalTaskStatus] ?? {}) })
         .eq('id', taskId)
 
-      if (finalTaskStatus === 'completed') {
-        await supabase
-          .from('task_assignments')
-          .update({ status: 'completed', completed_at: new Date().toISOString() })
-          .eq('task_id', taskId)
-          .eq('status', 'active')
-      }
     }
 
     if (isClosing) {

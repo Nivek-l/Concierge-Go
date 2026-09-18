@@ -128,7 +128,6 @@ export default async function AdminTaskDetailPage({
                     serviceFeeNaira: suggested.serviceFeeKobo / 100,
                     transportFeeNaira: suggested.transportFeeKobo / 100,
                     platformFeeNaira: suggested.platformFeeKobo / 100,
-                    agentPayoutNaira: suggested.agentPayoutKobo / 100,
                   }}
                 />
               </CardContent>

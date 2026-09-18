@@ -9,7 +9,7 @@ import type { QuoteBreakdown } from '@/types/domain'
  * module produces the *starting numbers* operations sees in the quote builder,
  * and owns the two rules the platform must never get wrong:
  *
- *   1. The platform fee is derived, not typed.
+ *   1. The task execution fee is derived, not typed.
  *   2. The total is the sum of its parts (the database also computes it as a
  *      generated column, so the two can never disagree).
  *
@@ -67,22 +67,16 @@ export function suggestQuote(params: SuggestQuoteParams): QuoteBreakdown {
     additionalFeeNote: null,
     platformFeeKobo,
     totalKobo: subtotal + platformFeeKobo,
-    agentPayoutKobo: suggestAgentPayout(serviceFeeKobo, transportFeeKobo, 0),
+    agentPayoutKobo: suggestAgentPayout(platformFeeKobo),
   }
 }
 
 /**
- * What the agent earns: their share of the service fee, plus the full
- * transport and any additional cost, which they actually bear.
+ * What the agent earns: 80% of the variable task execution fee. Transport and
+ * other approved task costs stay outside this split.
  */
-export function suggestAgentPayout(
-  serviceFeeKobo: number,
-  transportFeeKobo: number,
-  additionalFeeKobo: number,
-) {
-  return roundToNearestFifty(
-    serviceFeeKobo * PRICING.agentShareOfServiceFee + transportFeeKobo + additionalFeeKobo,
-  )
+export function suggestAgentPayout(taskExecutionFeeKobo: number) {
+  return Math.round(taskExecutionFeeKobo * PRICING.agentShareOfTaskExecutionFee)
 }
 
 export function computeTotal(breakdown: Omit<QuoteBreakdown, 'totalKobo' | 'agentPayoutKobo'>) {
@@ -110,10 +104,10 @@ export function reviewQuote(
   const issues: QuoteValidationIssue[] = []
   const subtotal = breakdown.serviceFeeKobo + breakdown.transportFeeKobo + breakdown.additionalFeeKobo
 
-  if (breakdown.agentPayoutKobo > subtotal) {
+  if (breakdown.agentPayoutKobo !== suggestAgentPayout(breakdown.platformFeeKobo)) {
     issues.push({
       field: 'agentPayoutNaira',
-      message: 'The agent payout is more than the service, transport and additional charges.',
+      message: 'The Go Agent share must be 80% of the task execution fee.',
     })
   }
 
@@ -121,7 +115,7 @@ export function reviewQuote(
   if (breakdown.platformFeeKobo < expectedPlatformFee * 0.5) {
     issues.push({
       field: 'platformFeeNaira',
-      message: 'The platform fee is well below the usual rate for this subtotal.',
+      message: 'The task execution fee is well below the usual rate for this subtotal.',
     })
   }
 
