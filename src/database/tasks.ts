@@ -16,6 +16,7 @@ import type {
   TaskStatus,
   TaskStatusHistoryRow,
   ReviewRow,
+  TaskLiveLocationRow,
 } from '@/types/database'
 import type { TaskDetail, TaskListItem } from '@/types/domain'
 
@@ -251,7 +252,13 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | null> 
       supabase.from('task_proofs').select('*').eq('task_id', taskId).order('created_at', { ascending: true }),
       supabase.from('task_status_history').select('*').eq('task_id', taskId).order('created_at', { ascending: true }),
       supabase.from('task_messages').select('*').eq('task_id', taskId).order('created_at', { ascending: true }),
-      supabase.from('task_assignments').select('*').eq('task_id', taskId).eq('status', 'active').maybeSingle(),
+      supabase
+        .from('task_assignments')
+        .select('*')
+        .eq('task_id', taskId)
+        .order('assigned_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
       supabase.from('disputes').select('*').eq('task_id', taskId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('reviews').select('*').eq('task_id', taskId).maybeSingle(),
     ])
@@ -301,6 +308,18 @@ export async function getTaskParticipants(taskId: string): Promise<TaskParticipa
   } catch (error) {
     logError('tasks.getTaskParticipants', error, { taskId })
     return {}
+  }
+}
+
+export async function getTaskLiveLocation(taskId: string): Promise<TaskLiveLocationRow | null> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from('task_live_locations').select('*').eq('task_id', taskId).maybeSingle()
+    if (error) throw error
+    return data as TaskLiveLocationRow | null
+  } catch (error) {
+    logError('tasks.getTaskLiveLocation', error, { taskId })
+    return null
   }
 }
 

@@ -66,7 +66,7 @@ export default async function AdminDashboardPage() {
         <StatCard
           icon={CreditCard}
           label="Concierge Go share"
-          value={formatNaira(Math.round((stats?.platform_fees_kobo ?? 0) * 0.2))}
+          value={formatNaira(Math.round((stats?.platform_fees_kobo ?? 0) * 0.4))}
         />
         <StatCard
           icon={Banknote}

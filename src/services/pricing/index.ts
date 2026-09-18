@@ -72,7 +72,7 @@ export function suggestQuote(params: SuggestQuoteParams): QuoteBreakdown {
 }
 
 /**
- * What the agent earns: 80% of the variable task execution fee. Transport and
+ * What the agent earns: 60% of the variable task execution fee. Transport and
  * other approved task costs stay outside this split.
  */
 export function suggestAgentPayout(taskExecutionFeeKobo: number) {
@@ -107,7 +107,7 @@ export function reviewQuote(
   if (breakdown.agentPayoutKobo !== suggestAgentPayout(breakdown.platformFeeKobo)) {
     issues.push({
       field: 'agentPayoutNaira',
-      message: 'The Go Agent share must be 80% of the task execution fee.',
+      message: 'The Go Agent share must be 60% of the task execution fee.',
     })
   }
 

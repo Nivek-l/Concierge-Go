@@ -534,7 +534,7 @@ export const SIGNED_URL_TTL_SECONDS = 60 * 10
 export const PRICING = {
   platformFeeRate: 0.1,
   minPlatformFeeKobo: 20000, // ₦200
-  agentShareOfTaskExecutionFee: 0.8,
-  conciergeShareOfTaskExecutionFee: 0.2,
+  agentShareOfTaskExecutionFee: 0.6,
+  conciergeShareOfTaskExecutionFee: 0.4,
   transportBaseKobo: 100000, // ₦1,000 within Calabar
 } as const

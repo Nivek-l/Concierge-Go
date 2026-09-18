@@ -63,6 +63,12 @@ const optionalText = (max: number) =>
     .optional()
     .transform((value) => (value ? value : null))
 
+const optionalCoordinate = (min: number, max: number) =>
+  z.preprocess(
+    (value) => (value === '' || value === undefined || value === null ? null : value),
+    z.coerce.number().min(min).max(max).nullable(),
+  )
+
 /* -------------------------------------------------------------------------- */
 /* Authentication                                                             */
 /* -------------------------------------------------------------------------- */
@@ -160,9 +166,13 @@ export const createTaskSchema = z
     locationArea: optionalText(120),
     locationAddress: z.string().trim().min(5, 'Where should the agent go?').max(300),
     locationLandmark: optionalText(160),
+    locationLatitude: optionalCoordinate(-90, 90),
+    locationLongitude: optionalCoordinate(-180, 180),
     destinationRequired: z.boolean().default(false),
     destinationArea: optionalText(120),
     destinationAddress: optionalText(300),
+    destinationLatitude: optionalCoordinate(-90, 90),
+    destinationLongitude: optionalCoordinate(-180, 180),
     contactPhone: optionalNigerianPhoneSchema,
     preferredDate: z
       .string()
@@ -188,6 +198,14 @@ export const createTaskSchema = z
     (data) => !data.destinationRequired || Boolean(data.destinationAddress),
     { message: 'Add the destination address.', path: ['destinationAddress'] },
   )
+  .refine((data) => (data.locationLatitude === null) === (data.locationLongitude === null), {
+    message: 'Capture both coordinates again.',
+    path: ['locationLatitude'],
+  })
+  .refine((data) => (data.destinationLatitude === null) === (data.destinationLongitude === null), {
+    message: 'Capture both destination coordinates again.',
+    path: ['destinationLatitude'],
+  })
 export type CreateTaskInput = z.input<typeof createTaskSchema>
 
 export const cancelTaskSchema = z.object({
@@ -213,6 +231,10 @@ export const createQuoteSchema = z
   .refine((data) => data.serviceFeeNaira > 0, {
     message: 'A service fee is required.',
     path: ['serviceFeeNaira'],
+  })
+  .refine((data) => data.platformFeeNaira > 0, {
+    message: 'A task execution fee is required.',
+    path: ['platformFeeNaira'],
   })
   .refine((data) => data.additionalFeeNaira === 0 || Boolean(data.additionalFeeNote), {
     message: 'Explain what the additional charge covers.',

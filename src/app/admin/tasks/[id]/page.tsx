@@ -9,10 +9,12 @@ import {
   getMessageSenders,
   getTaskDetail,
   getTaskFileUrls,
+  getTaskLiveLocation,
   getTaskParticipants,
 } from '@/database/tasks'
 import { formatFriendlyDate, formatNaira, formatPhone } from '@/lib/format'
 import { suggestQuote } from '@/services/pricing'
+import { TaskLiveMap } from '@/components/tasks/task-live-map'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,13 +51,14 @@ export default async function AdminTaskDetailPage({
 
   const { task, category, city, activeQuote, acceptedQuote, latestPayment, dispute } = detail
 
-  const [fileUrls, senders, participants, candidates] = await Promise.all([
+  const [fileUrls, senders, participants, candidates, liveLocation] = await Promise.all([
     getTaskFileUrls(detail),
     getMessageSenders(detail.messages),
     getTaskParticipants(id),
     ASSIGNABLE.includes(task.status)
       ? getAssignmentCandidates({ city_id: task.city_id, location_area: task.location_area })
       : Promise.resolve([]),
+    getTaskLiveLocation(id),
   ])
 
   const suggested = suggestQuote({
@@ -116,6 +119,14 @@ export default async function AdminTaskDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
+          {['assigned', 'en_route', 'arrived', 'in_progress', 'awaiting_confirmation'].includes(task.status) ? (
+            <Card>
+              <CardHeader><CardTitle>Go Agent live location</CardTitle></CardHeader>
+              <CardContent>
+                <TaskLiveMap taskId={id} status={task.status} initialLocation={liveLocation} pickup={task.location_latitude != null && task.location_longitude != null ? { latitude: task.location_latitude, longitude: task.location_longitude } : null} destination={task.destination_latitude != null && task.destination_longitude != null ? { latitude: task.destination_latitude, longitude: task.destination_longitude } : null} />
+              </CardContent>
+            </Card>
+          ) : null}
           {QUOTABLE.includes(task.status) ? (
             <Card>
               <CardHeader>

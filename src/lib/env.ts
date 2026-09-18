@@ -13,6 +13,7 @@ export const publicEnv = {
   paystackPublicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? '',
   supportPhone: process.env.NEXT_PUBLIC_SUPPORT_PHONE ?? '+2347065582830',
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? 'hello@conciergego.ng',
+  vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '',
 } as const
 
 /** True when Supabase is configured. Used to show setup guidance instead of crashing. */

@@ -83,11 +83,11 @@ export default async function AdminPayoutsPage({
                       <dd className="font-semibold">{formatNaira(entry.task_execution_fee_kobo)}</dd>
                     </div>
                     <div className="flex justify-between gap-4 sm:justify-end">
-                      <dt className="text-muted-foreground">Go Agent (80%)</dt>
+                      <dt className="text-muted-foreground">Go Agent (60%)</dt>
                       <dd className="font-semibold">{formatNaira(entry.amount_kobo)}</dd>
                     </div>
                     <div className="flex justify-between gap-4 sm:justify-end">
-                      <dt className="text-muted-foreground">Concierge Go (20%)</dt>
+                      <dt className="text-muted-foreground">Concierge Go (40%)</dt>
                       <dd className="font-semibold">{formatNaira(entry.concierge_share_kobo)}</dd>
                     </div>
                   </dl>

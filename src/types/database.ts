@@ -184,9 +184,13 @@ export interface TaskRow {
   location_area: string | null
   location_address: string
   location_landmark: string | null
+  location_latitude: number | null
+  location_longitude: number | null
   destination_required: boolean
   destination_area: string | null
   destination_address: string | null
+  destination_latitude: number | null
+  destination_longitude: number | null
   contact_phone: string | null
   preferred_date: string | null
   preferred_time_slot: string | null
@@ -334,6 +338,21 @@ export interface TaskAssignmentRow {
   released_at: string | null
   release_reason: string | null
   completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskLiveLocationRow {
+  task_id: string
+  assignment_id: string
+  agent_id: string
+  latitude: number
+  longitude: number
+  accuracy_metres: number | null
+  heading_degrees: number | null
+  speed_metres_per_second: number | null
+  is_tracking: boolean
+  recorded_at: string
   created_at: string
   updated_at: string
 }

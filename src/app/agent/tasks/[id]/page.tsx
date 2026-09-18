@@ -7,6 +7,7 @@ import {
   getMessageSenders,
   getTaskDetail,
   getTaskFileUrls,
+  getTaskLiveLocation,
   getTaskParticipants,
 } from '@/database/tasks'
 import { AGENT_ACTION_LABEL } from '@/lib/constants'
@@ -18,6 +19,8 @@ import { MessageThread } from '@/components/tasks/message-thread'
 import { TaskTimeline } from '@/components/tasks/task-timeline'
 import { AdvanceTaskButton } from '@/components/agent/advance-task-button'
 import { ProofForm } from '@/components/agent/proof-form'
+import { AgentLocationTracker } from '@/components/agent/agent-location-tracker'
+import { TaskLiveMap } from '@/components/tasks/task-live-map'
 
 export async function generateMetadata({
   params,
@@ -43,10 +46,11 @@ export default async function AgentTaskDetailPage({
   const isActiveAssignment = detail.assignment.status === 'active'
   const nextActionLabel = AGENT_ACTION_LABEL[task.status]
 
-  const [fileUrls, senders, participants] = await Promise.all([
+  const [fileUrls, senders, participants, liveLocation] = await Promise.all([
     getTaskFileUrls(detail),
     getMessageSenders(detail.messages),
     getTaskParticipants(id),
+    getTaskLiveLocation(id),
   ])
 
   const customer = participants.customer
@@ -76,8 +80,18 @@ export default async function AgentTaskDetailPage({
         <div className="space-y-6">
           {isActiveAssignment && nextActionLabel ? (
             <Card className="border-primary/30 bg-primary-subtle/40">
-              <CardContent className="pt-5">
-                <AdvanceTaskButton taskId={id} label={nextActionLabel} />
+              <CardContent className="space-y-4 pt-5">
+                <AgentLocationTracker taskId={id} assignmentId={detail.assignment.id} agentId={user.agent.id} status={task.status} />
+                {task.status !== 'assigned' ? <AdvanceTaskButton taskId={id} label={nextActionLabel} /> : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {['assigned', 'en_route', 'arrived', 'in_progress', 'awaiting_confirmation'].includes(task.status) ? (
+            <Card>
+              <CardHeader><CardTitle>Live route</CardTitle></CardHeader>
+              <CardContent>
+                <TaskLiveMap taskId={id} status={task.status} initialLocation={liveLocation} pickup={task.location_latitude != null && task.location_longitude != null ? { latitude: task.location_latitude, longitude: task.location_longitude } : null} destination={task.destination_latitude != null && task.destination_longitude != null ? { latitude: task.destination_latitude, longitude: task.destination_longitude } : null} />
               </CardContent>
             </Card>
           ) : null}

@@ -8,6 +8,7 @@ import {
   getMessageSenders,
   getTaskDetail,
   getTaskFileUrls,
+  getTaskLiveLocation,
   getTaskParticipants,
 } from '@/database/tasks'
 import { formatFriendlyDate, formatNaira, formatPhone, initials } from '@/lib/format'
@@ -23,6 +24,7 @@ import { PaymentPanel } from '@/components/tasks/payment-panel'
 import { ProofReviewPanel } from '@/components/tasks/proof-review-panel'
 import { QuotePanel } from '@/components/tasks/quote-panel'
 import { TaskTimeline } from '@/components/tasks/task-timeline'
+import { TaskLiveMap } from '@/components/tasks/task-live-map'
 
 const CANCELLABLE = ['draft', 'submitted', 'under_review', 'quoted', 'awaiting_payment']
 
@@ -51,10 +53,11 @@ export default async function TaskDetailPage({
 
   const { task, category, city, activeQuote, acceptedQuote, latestPayment, dispute } = detail
 
-  const [fileUrls, senders, participants] = await Promise.all([
+  const [fileUrls, senders, participants, liveLocation] = await Promise.all([
     getTaskFileUrls(detail),
     getMessageSenders(detail.messages),
     getTaskParticipants(id),
+    getTaskLiveLocation(id),
   ])
 
   const agent = participants.agent
@@ -109,6 +112,21 @@ export default async function TaskDetailPage({
           ) : null}
 
           {task.status === 'awaiting_confirmation' ? <ProofReviewPanel taskId={id} /> : null}
+
+          {['assigned', 'en_route', 'arrived', 'in_progress', 'awaiting_confirmation'].includes(task.status) ? (
+            <Card>
+              <CardHeader><CardTitle>Track your Go Agent</CardTitle></CardHeader>
+              <CardContent>
+                <TaskLiveMap
+                  taskId={id}
+                  status={task.status}
+                  initialLocation={liveLocation}
+                  pickup={task.location_latitude != null && task.location_longitude != null ? { latitude: task.location_latitude, longitude: task.location_longitude } : null}
+                  destination={task.destination_latitude != null && task.destination_longitude != null ? { latitude: task.destination_latitude, longitude: task.destination_longitude } : null}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>

@@ -17,6 +17,8 @@ import {
 import { Logo } from '@/components/shared/logo'
 import { NotificationBell } from '@/components/shared/notification-bell'
 import { PortalNavLinks } from '@/components/layout/portal-nav-links'
+import { RealtimeRefresh } from '@/components/shared/realtime-refresh'
+import { PushNotificationManager } from '@/components/shared/push-notification-manager'
 
 export interface PortalNavLink {
   href: string
@@ -36,6 +38,8 @@ export function PortalHeader({
   eyebrow?: string
 }) {
   return (
+    <>
+      <RealtimeRefresh profileId={user.id} />
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
       <div className="container flex h-16 w-full min-w-0 items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3 sm:gap-6">
@@ -51,6 +55,7 @@ export function PortalHeader({
         <PortalNavLinks links={links} />
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <PushNotificationManager />
           <NotificationBell profileId={user.id} />
 
           <DropdownMenu>
@@ -115,5 +120,6 @@ export function PortalHeader({
         </div>
       </div>
     </header>
+    </>
   )
 }

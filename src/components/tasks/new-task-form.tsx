@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { Crosshair, Loader2 } from 'lucide-react'
 
 import { createDraftTaskAction, finalizeTaskAction, type FinalizeTaskResult } from '@/actions/task-draft'
 import { TIME_SLOTS, URGENCY_META } from '@/lib/constants'
@@ -38,6 +38,9 @@ export function NewTaskForm({
   const [attachments, setAttachments] = useState<UploadedFileMeta[]>([])
   const [urgency, setUrgency] = useState<TaskUrgency>('standard')
   const [destinationRequired, setDestinationRequired] = useState(false)
+  const [pickupCoordinates, setPickupCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [destinationCoordinates, setDestinationCoordinates] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [locating, setLocating] = useState<'pickup' | 'destination' | null>(null)
   const [state, formAction, isPending] = useActionState<FinalizeTaskResult | null, FormData>(
     finalizeTaskAction,
     null,
@@ -82,6 +85,24 @@ export function NewTaskForm({
 
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined
 
+  function captureLocation(kind: 'pickup' | 'destination') {
+    if (!('geolocation' in navigator)) {
+      toast.error('Location is not supported on this device.')
+      return
+    }
+    setLocating(kind)
+    navigator.geolocation.getCurrentPosition((position) => {
+      const coordinates = { latitude: position.coords.latitude, longitude: position.coords.longitude }
+      if (kind === 'pickup') setPickupCoordinates(coordinates)
+      else setDestinationCoordinates(coordinates)
+      setLocating(null)
+      toast.success(`${kind === 'pickup' ? 'Task' : 'Destination'} location pinned.`)
+    }, () => {
+      setLocating(null)
+      toast.error('Could not get your location. Check browser permission and try again.')
+    }, { enableHighAccuracy: true, timeout: 15000 })
+  }
+
   if (!draftHydrated) {
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
@@ -95,6 +116,10 @@ export function NewTaskForm({
     <form action={formAction} className="space-y-8">
       <input type="hidden" name="draftTaskId" value={draftTaskId ?? ''} />
       <input type="hidden" name="attachments" value={JSON.stringify(attachments)} />
+      <input type="hidden" name="locationLatitude" value={pickupCoordinates?.latitude ?? ''} />
+      <input type="hidden" name="locationLongitude" value={pickupCoordinates?.longitude ?? ''} />
+      <input type="hidden" name="destinationLatitude" value={destinationCoordinates?.latitude ?? ''} />
+      <input type="hidden" name="destinationLongitude" value={destinationCoordinates?.longitude ?? ''} />
 
       <FormError message={state && !state.ok ? state.error : null} />
       {draftError ? (
@@ -211,13 +236,23 @@ export function NewTaskForm({
         <Field name="locationLandmark" label="Landmark" hint="Anything that helps an agent find the spot.">
           {(props) => <Input {...props} name="locationLandmark" placeholder="Nearest landmark" defaultValue={initialDraft?.locationLandmark ?? undefined} />}
         </Field>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="outline" size="sm" loading={locating === 'pickup'} onClick={() => captureLocation('pickup')}>
+            <Crosshair aria-hidden /> Use my current location
+          </Button>
+          <span className="text-xs text-muted-foreground">{pickupCoordinates ? 'Precise task pin saved.' : 'Optional — helps the agent find you and improves the live map.'}</span>
+        </div>
 
         <div className="flex items-start gap-2.5">
           <Checkbox
             id="destinationRequired"
             name="destinationRequired"
             checked={destinationRequired}
-            onCheckedChange={(checked) => setDestinationRequired(checked === true)}
+            onCheckedChange={(checked) => {
+              const enabled = checked === true
+              setDestinationRequired(enabled)
+              if (!enabled) setDestinationCoordinates(null)
+            }}
           />
           <label htmlFor="destinationRequired" className="text-sm text-muted-foreground">
             This task involves delivering something to a second location
@@ -237,6 +272,12 @@ export function NewTaskForm({
             <Field name="destinationArea" label="Destination area">
               {(props) => <Input {...props} name="destinationArea" placeholder="Area" defaultValue={initialDraft?.destinationArea ?? undefined} />}
             </Field>
+            <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+              <Button type="button" variant="outline" size="sm" loading={locating === 'destination'} onClick={() => captureLocation('destination')}>
+                <Crosshair aria-hidden /> Pin my current destination
+              </Button>
+              <span className="text-xs text-muted-foreground">{destinationCoordinates ? 'Precise destination pin saved.' : 'Use this only if you are currently at the destination.'}</span>
+            </div>
           </div>
         ) : null}
       </section>

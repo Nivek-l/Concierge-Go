@@ -46,7 +46,7 @@ export function QuoteForm({
     [serviceFee, transportFee, additionalFee, platformFee],
   )
   const agentShareKobo = useMemo(
-    () => Math.round(toKobo(platformFee) * 0.8),
+    () => Math.round(toKobo(platformFee) * 0.6),
     [platformFee],
   )
 
@@ -124,11 +124,11 @@ export function QuoteForm({
 
       <div className="rounded-lg border bg-muted/40 p-3.5 text-sm">
         <div className="flex items-center justify-between">
-          <span className="font-medium">Go Agent share (80%)</span>
+          <span className="font-medium">Go Agent share (60%)</span>
           <span className="font-semibold">{formatNaira(agentShareKobo)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-muted-foreground">
-          <span>Concierge Go share (20%)</span>
+          <span>Concierge Go share (40%)</span>
           <span>{formatNaira(toKobo(platformFee) - agentShareKobo)}</span>
         </div>
       </div>

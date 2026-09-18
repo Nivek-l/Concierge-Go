@@ -7,6 +7,7 @@ import type { NotificationType, TaskRow, UserRole } from '@/types/database'
 
 import { sendEmail } from './email'
 import { sendSms } from './sms'
+import { sendPush } from './push'
 
 /**
  * Notification service.
@@ -51,6 +52,8 @@ export async function notify(params: NotifyParams): Promise<void> {
   }
 
   const channels = params.channels ?? []
+
+  void sendPush(params.profileId, { title: params.title, body: params.body, link: params.link, taskId: params.taskId }).catch((error) => logError('notifications.push', error))
 
   if (channels.includes('email') && params.email) {
     void sendEmail({

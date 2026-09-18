@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, ClipboardList, PlusCircle, Receipt } from 'lucide-react'
+import { ArrowRight, ClipboardList, MapPinned, PlusCircle, Receipt } from 'lucide-react'
 
 import { requireCustomer } from '@/lib/auth'
 import { getCustomerDashboard } from '@/database/tasks'
@@ -119,6 +119,12 @@ export default async function DashboardPage() {
                       </div>
                       <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
                         <TaskStatusBadge status={task.status} />
+                        {['en_route', 'arrived', 'in_progress'].includes(task.status) ? (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-primary">
+                            <MapPinned className="h-3.5 w-3.5" aria-hidden />
+                            Track Go Agent
+                          </span>
+                        ) : null}
                         {task.total_kobo ? (
                           <span className="text-xs text-muted-foreground">
                             {formatNaira(task.total_kobo)}

@@ -92,7 +92,7 @@ export async function getPayoutLedger(options?: {
 
     result.entries = payouts.map((payout) => {
       const task = tasks.get(payout.task_id)
-      const taskExecutionFeeKobo = Math.round(payout.amount_kobo / 0.8)
+      const taskExecutionFeeKobo = Math.round(payout.amount_kobo / 0.6)
       return {
         ...payout,
         task_reference: task?.reference ?? '',
