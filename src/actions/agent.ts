@@ -9,12 +9,19 @@ import { createClient } from '@/lib/supabase/server'
 import {
   advanceTaskSchema,
   agentAvailabilitySchema,
+  agentBankAccountSchema,
   agentProfileSchema,
   agentVerificationSchema,
   fieldErrorsFrom,
   proofSchema,
   uuidSchema,
 } from '@/lib/validations'
+import { getPayoutMode } from '@/lib/env'
+import {
+  createPaystackTransferRecipient,
+  listNigerianBanks,
+  resolveNigerianBankAccount,
+} from '@/services/payouts/paystack'
 import { taskEvents } from '@/services/notifications'
 import { actionError, actionOk, type ActionResult } from '@/types/domain'
 import type { TaskRow, TaskStatus } from '@/types/database'
@@ -354,6 +361,86 @@ export async function updateAgentProfileAction(
   } catch (error) {
     logError('agent.updateProfile', error)
     return actionError(toUserMessage(error, ERROR_MESSAGES.saveFailed))
+  }
+}
+
+export type AgentBankAccountResult = ActionResult<{
+  accountName: string
+  lastFour: string
+  paystackReady: boolean
+}>
+
+export async function saveAgentBankAccountAction(
+  _prev: AgentBankAccountResult | null,
+  formData: FormData,
+): Promise<AgentBankAccountResult> {
+  const parsed = agentBankAccountSchema.safeParse(readForm(formData))
+  if (!parsed.success) {
+    return actionError('Please check the bank details.', {
+      fieldErrors: fieldErrorsFrom(parsed.error),
+    })
+  }
+
+  try {
+    const user = await requireAgentAction()
+    const supabase = await createClient()
+    const banks = await listNigerianBanks()
+    const bank = banks.find((item) => item.code === parsed.data.bankCode)
+    if (!bank) return actionError('Choose a valid Nigerian bank from the list.')
+
+    const resolved = await resolveNigerianBankAccount(
+      parsed.data.accountNumber,
+      parsed.data.bankCode,
+    )
+
+    let recipientCode: string | null = null
+    let recipientActive = false
+    if (getPayoutMode() === 'paystack') {
+      const recipient = await createPaystackTransferRecipient({
+        name: resolved.account_name,
+        accountNumber: resolved.account_number,
+        bankCode: parsed.data.bankCode,
+        description: `Concierge Go payout account for agent ${user.agent.id}`,
+      })
+      recipientCode = recipient.recipient_code
+      recipientActive = recipient.active
+    }
+
+    const { error } = await supabase.from('agent_bank_accounts').upsert(
+      {
+        agent_id: user.agent.id,
+        account_name: resolved.account_name,
+        account_number: resolved.account_number,
+        bank_code: parsed.data.bankCode,
+        bank_name: bank.name,
+        recipient_code: recipientCode,
+        recipient_active: recipientActive,
+        verified_at: new Date().toISOString(),
+      },
+      { onConflict: 'agent_id' },
+    )
+    if (error) throw error
+
+    revalidatePath('/agent/profile')
+    revalidatePath('/admin/payouts')
+    return actionOk(
+      {
+        accountName: resolved.account_name,
+        lastFour: resolved.account_number.slice(-4),
+        paystackReady: Boolean(recipientCode && recipientActive),
+      },
+      getPayoutMode() === 'paystack'
+        ? 'Bank account verified and connected for Paystack payouts.'
+        : 'Bank account verified and saved for manual payouts.',
+    )
+  } catch (error) {
+    logError('agent.saveBankAccount', error)
+    return actionError(
+      toUserMessage(
+        error,
+        'We could not verify that bank account. Check the number and bank, then try again.',
+      ),
+    )
   }
 }
 

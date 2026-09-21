@@ -22,6 +22,31 @@ Users can submit requests for errands, document handling, shopping, property ver
 
 The platform is designed to launch in Calabar, Nigeria, with an architecture that can support expansion into other cities.
 
+## Payment and agent-payout modes
+
+Customer checkout and agent payouts are configured separately:
+
+```env
+PAYMENT_MODE=paystack
+PAYOUT_MODE=manual
+```
+
+`PAYMENT_MODE=paystack` keeps customer payments on Paystack. With
+`PAYOUT_MODE=manual`, an administrator transfers the approved earning outside
+the app and records the bank reference in the payout ledger.
+
+After live Paystack Transfers is enabled, change only the payout setting:
+
+```env
+PAYOUT_MODE=paystack
+```
+
+Redeploy after changing a Vercel environment variable. Paystack payout mode
+uses the existing server-only `PAYSTACK_SECRET_KEY`; never expose that key with
+a `NEXT_PUBLIC_` prefix. Agents add and verify their Nigerian bank account from
+their profile, and the admin approves and sends earnings from the payout ledger.
+Final transfer results are recorded through `/api/webhooks/paystack`.
+
 ---
 
 ## 🌐 Live Website

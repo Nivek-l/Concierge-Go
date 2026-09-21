@@ -88,6 +88,33 @@ export function isPaystackConfigured() {
   return Boolean(process.env.PAYSTACK_SECRET_KEY)
 }
 
+export type PayoutMode = 'manual' | 'paystack'
+
+/**
+ * Agent payouts are deliberately configured separately from customer
+ * payments. This lets operations keep collecting with Paystack while paying
+ * agents manually until live Transfers are enabled on the Paystack account.
+ */
+export function getPayoutMode(): PayoutMode {
+  const requested = (process.env.PAYOUT_MODE ?? 'manual').toLowerCase()
+  if (requested !== 'manual' && requested !== 'paystack') {
+    throw new Error('PAYOUT_MODE must be either manual or paystack.')
+  }
+  if (requested === 'paystack' && !process.env.PAYSTACK_SECRET_KEY) {
+    throw new Error('PAYOUT_MODE is paystack but PAYSTACK_SECRET_KEY is missing.')
+  }
+  return requested
+}
+
+export function payoutModeSummary() {
+  const mode = getPayoutMode()
+  return {
+    mode,
+    label: mode === 'paystack' ? 'Paystack bank transfers' : 'Manual bank transfers',
+    automatic: mode === 'paystack',
+  }
+}
+
 export type AiProvider = 'deterministic' | 'anthropic' | 'deepseek' | 'openrouter'
 
 export function getAiProvider(): AiProvider {

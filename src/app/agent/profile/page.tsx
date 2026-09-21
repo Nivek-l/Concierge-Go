@@ -3,11 +3,15 @@ import { Star } from 'lucide-react'
 
 import { requireAgent } from '@/lib/auth'
 import { getAgentServiceAreas } from '@/database/agents'
+import { getAgentBankAccount } from '@/database/payouts'
+import { getPayoutMode } from '@/lib/env'
+import { listNigerianBanks } from '@/services/payouts/paystack'
 import { getCities } from '@/database/reference'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AvatarUploader } from '@/components/profile/avatar-uploader'
 import { AgentProfileForm } from '@/components/agent/agent-profile-form'
+import { AgentBankAccountForm } from '@/components/agent/agent-bank-account-form'
 
 export const metadata: Metadata = {
   title: 'Agent profile',
@@ -23,9 +27,11 @@ const VERIFICATION_TONE: Record<string, 'success' | 'warning' | 'danger' | 'neut
 
 export default async function AgentProfilePage() {
   const user = await requireAgent()
-  const [areas, cities] = await Promise.all([
+  const [areas, cities, bankAccount, banks] = await Promise.all([
     getAgentServiceAreas(user.agent.id),
     getCities(),
+    getAgentBankAccount(user.agent.id),
+    listNigerianBanks(),
   ])
 
   return (
@@ -65,6 +71,22 @@ export default async function AgentProfilePage() {
             agent={user.agent}
             cities={cities}
             serviceAreas={areas.map((area) => area.area_name)}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Payout bank account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Task earnings are paid only to this verified Nigerian bank account. Never share your PIN or OTP.
+          </p>
+          <AgentBankAccountForm
+            account={bankAccount}
+            banks={banks}
+            payoutMode={getPayoutMode()}
           />
         </CardContent>
       </Card>

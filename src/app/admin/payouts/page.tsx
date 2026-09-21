@@ -5,6 +5,7 @@ import { Banknote, CircleCheck, Clock3, PauseCircle } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth'
 import { getPayoutLedger } from '@/database/payouts'
 import { formatDateTime, formatNaira } from '@/lib/format'
+import { payoutModeSummary } from '@/lib/env'
 import { PAYOUT_STATUSES, type PayoutStatus } from '@/types/database'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -23,14 +24,18 @@ export default async function AdminPayoutsPage({
     ? (params.status as PayoutStatus)
     : 'all'
   const ledger = await getPayoutLedger({ status })
+  const payoutMode = payoutModeSummary()
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Agent payout ledger</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Earnings are recorded automatically when an assignment is completed.
         </p>
+        </div>
+        <Badge variant={payoutMode.automatic ? 'success' : 'neutral'}>{payoutMode.label}</Badge>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -76,6 +81,19 @@ export default async function AdminPayoutsPage({
                     {entry.payment_reference ? (
                       <p className="mt-1 text-xs text-muted-foreground">Reference: {entry.payment_reference}</p>
                     ) : null}
+                    {entry.bank_account ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {entry.bank_account.bank_name} · {entry.bank_account.account_name} · {entry.bank_account.account_number}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs font-medium text-destructive">No payout bank account</p>
+                    )}
+                    {entry.provider_status ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Paystack status: {entry.provider_status}
+                        {entry.failure_reason ? ` · ${entry.failure_reason}` : ''}
+                      </p>
+                    ) : null}
                   </div>
                   <dl className="grid min-w-48 gap-1 text-sm sm:text-right">
                     <div className="flex justify-between gap-4 sm:justify-end">
@@ -92,7 +110,13 @@ export default async function AdminPayoutsPage({
                     </div>
                   </dl>
                 </div>
-                <PayoutActionForm payoutId={entry.id} currentStatus={entry.status} />
+                <PayoutActionForm
+                  payoutId={entry.id}
+                  currentStatus={entry.status}
+                  payoutMode={payoutMode.mode}
+                  providerStatus={entry.provider_status}
+                  hasBankAccount={Boolean(entry.bank_account)}
+                />
               </CardContent>
             </Card>
           ))}

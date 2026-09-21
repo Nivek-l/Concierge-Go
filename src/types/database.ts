@@ -370,7 +370,26 @@ export interface AgentPayoutRow {
   paid_by: string | null
   paid_at: string | null
   payment_reference: string | null
+  payout_method: 'manual' | 'paystack'
+  provider_transfer_code: string | null
+  provider_status: string | null
+  transfer_initiated_at: string | null
+  failure_reason: string | null
   note: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AgentBankAccountRow {
+  id: string
+  agent_id: string
+  account_name: string
+  account_number: string
+  bank_code: string
+  bank_name: string
+  recipient_code: string | null
+  recipient_active: boolean
+  verified_at: string
   created_at: string
   updated_at: string
 }

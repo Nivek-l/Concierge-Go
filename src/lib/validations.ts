@@ -327,6 +327,15 @@ export const agentProfileSchema = z.object({
 })
 export type AgentProfileInput = z.input<typeof agentProfileSchema>
 
+export const agentBankAccountSchema = z.object({
+  accountNumber: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{10}$/, 'Enter a valid 10-digit Nigerian account number.'),
+  bankCode: z.string().trim().min(2, 'Choose your bank.').max(12),
+  bankName: z.string().trim().min(2, 'Choose your bank.').max(160),
+})
+
 /**
  * Agent verification. Deliberately operational: how they move, when they are
  * free, and a referee. No ID numbers, no BVN, no bank details, no document
@@ -431,6 +440,15 @@ export const updatePayoutSchema = z
     (data) => data.status !== 'paid' || Boolean(data.paymentReference),
     { message: 'Add the transfer or payment reference.', path: ['paymentReference'] },
   )
+
+export const sendPayoutSchema = z.object({
+  payoutId: uuidSchema,
+})
+
+export const finalizePayoutTransferSchema = z.object({
+  payoutId: uuidSchema,
+  otp: z.string().trim().regex(/^[0-9]{6}$/, 'Enter the 6-digit Paystack OTP.'),
+})
 
 export const taskFilterSchema = z.object({
   status: z.string().optional(),

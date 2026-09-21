@@ -2,7 +2,7 @@ import 'server-only'
 
 import { logError } from '@/lib/errors'
 import { createClient } from '@/lib/supabase/server'
-import type { AgentPayoutRow, PayoutStatus } from '@/types/database'
+import type { AgentBankAccountRow, AgentPayoutRow, PayoutStatus } from '@/types/database'
 
 export interface PayoutLedgerEntry extends AgentPayoutRow {
   task_reference: string
@@ -10,6 +10,7 @@ export interface PayoutLedgerEntry extends AgentPayoutRow {
   agent_name: string
   service_charge_kobo: number
   concierge_share_kobo: number
+  bank_account: AgentBankAccountRow | null
 }
 
 export interface PayoutLedgerSummary {
@@ -64,9 +65,10 @@ export async function getPayoutLedger(options?: {
     const taskIds = Array.from(new Set(payouts.map((payout) => payout.task_id)))
     const agentIds = Array.from(new Set(payouts.map((payout) => payout.agent_id)))
 
-    const [tasksResult, agentsResult] = await Promise.all([
+    const [tasksResult, agentsResult, bankAccountsResult] = await Promise.all([
       supabase.from('tasks').select('id, reference, title').in('id', taskIds),
       supabase.from('agents').select('id, profile_id').in('id', agentIds),
+      supabase.from('agent_bank_accounts').select('*').in('agent_id', agentIds),
     ])
 
     const tasks = new Map(
@@ -89,6 +91,12 @@ export async function getPayoutLedger(options?: {
     const nameByAgent = new Map(
       agentProfiles.map((agent) => [agent.id, nameByProfile.get(agent.profile_id) ?? 'Go Agent']),
     )
+    const bankByAgent = new Map(
+      ((bankAccountsResult.data ?? []) as AgentBankAccountRow[]).map((account) => [
+        account.agent_id,
+        account,
+      ]),
+    )
 
     result.entries = payouts.map((payout) => {
       const task = tasks.get(payout.task_id)
@@ -100,6 +108,7 @@ export async function getPayoutLedger(options?: {
         agent_name: nameByAgent.get(payout.agent_id) ?? 'Go Agent',
         service_charge_kobo: serviceChargeKobo,
         concierge_share_kobo: serviceChargeKobo - payout.amount_kobo,
+        bank_account: bankByAgent.get(payout.agent_id) ?? null,
       }
     })
 
@@ -107,5 +116,21 @@ export async function getPayoutLedger(options?: {
   } catch (error) {
     logError('payouts.getLedger', error, options)
     return emptyLedger()
+  }
+}
+
+export async function getAgentBankAccount(agentId: string): Promise<AgentBankAccountRow | null> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('agent_bank_accounts')
+      .select('*')
+      .eq('agent_id', agentId)
+      .maybeSingle<AgentBankAccountRow>()
+    if (error) throw error
+    return data ?? null
+  } catch (error) {
+    logError('payouts.getAgentBankAccount', error, { agentId })
+    return null
   }
 }
