@@ -8,7 +8,7 @@ export interface PayoutLedgerEntry extends AgentPayoutRow {
   task_reference: string
   task_title: string
   agent_name: string
-  task_execution_fee_kobo: number
+  service_charge_kobo: number
   concierge_share_kobo: number
 }
 
@@ -92,14 +92,14 @@ export async function getPayoutLedger(options?: {
 
     result.entries = payouts.map((payout) => {
       const task = tasks.get(payout.task_id)
-      const taskExecutionFeeKobo = Math.round(payout.amount_kobo / 0.6)
+      const serviceChargeKobo = Math.round(payout.amount_kobo / 0.6)
       return {
         ...payout,
         task_reference: task?.reference ?? '',
         task_title: task?.title ?? 'Task',
         agent_name: nameByAgent.get(payout.agent_id) ?? 'Go Agent',
-        task_execution_fee_kobo: taskExecutionFeeKobo,
-        concierge_share_kobo: taskExecutionFeeKobo - payout.amount_kobo,
+        service_charge_kobo: serviceChargeKobo,
+        concierge_share_kobo: serviceChargeKobo - payout.amount_kobo,
       }
     })
 

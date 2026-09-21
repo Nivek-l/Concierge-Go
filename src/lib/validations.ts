@@ -221,10 +221,9 @@ export const createQuoteSchema = z
   .object({
     taskId: uuidSchema,
     serviceFeeNaira: nairaAmountSchema,
-    transportFeeNaira: nairaAmountSchema,
+    serviceChargeNaira: nairaAmountSchema,
     additionalFeeNaira: nairaAmountSchema.default(0),
     additionalFeeNote: optionalText(240),
-    platformFeeNaira: nairaAmountSchema,
     notes: optionalText(1000),
     expiresInHours: z.coerce.number().int().min(1).max(168).default(48),
   })
@@ -232,9 +231,9 @@ export const createQuoteSchema = z
     message: 'A service fee is required.',
     path: ['serviceFeeNaira'],
   })
-  .refine((data) => data.platformFeeNaira > 0, {
-    message: 'A task execution fee is required.',
-    path: ['platformFeeNaira'],
+  .refine((data) => data.serviceChargeNaira > 0, {
+    message: 'A service charge is required.',
+    path: ['serviceChargeNaira'],
   })
   .refine((data) => data.additionalFeeNaira === 0 || Boolean(data.additionalFeeNote), {
     message: 'Explain what the additional charge covers.',

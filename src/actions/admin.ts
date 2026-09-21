@@ -17,7 +17,7 @@ import {
   reviewVerificationSchema,
   suspendAccountSchema,
 } from '@/lib/validations'
-import { computeTotal, suggestAgentPayout } from '@/services/pricing'
+import { computeTotal, splitServiceCharge } from '@/services/pricing'
 import { notify, taskEvents } from '@/services/notifications'
 import { actionError, actionOk, type ActionResult } from '@/types/domain'
 import type { TaskRow, VerificationStatus } from '@/types/database'
@@ -80,6 +80,7 @@ export async function createQuoteAction(
       .eq('status', 'sent')
 
     const expiresAt = new Date(Date.now() + input.expiresInHours * 60 * 60 * 1000).toISOString()
+    const serviceCharge = splitServiceCharge(input.serviceChargeNaira)
 
     const { data: quote, error } = await supabase
       .from('task_quotes')
@@ -87,12 +88,12 @@ export async function createQuoteAction(
         task_id: input.taskId,
         created_by: admin.id,
         service_fee_kobo: input.serviceFeeNaira,
-        transport_fee_kobo: input.transportFeeNaira,
+        transport_fee_kobo: serviceCharge.transportFeeKobo,
         additional_fee_kobo: input.additionalFeeNaira,
         additional_fee_note: input.additionalFeeNote,
-        platform_fee_kobo: input.platformFeeNaira,
-        // The execution fee varies by task difficulty; its split does not.
-        agent_payout_kobo: suggestAgentPayout(input.platformFeeNaira),
+        platform_fee_kobo: serviceCharge.taskExecutionFeeKobo,
+        // Transportation is included in this 60% payout, not added on top.
+        agent_payout_kobo: serviceCharge.agentPayoutKobo,
         status: 'sent',
         notes: input.notes,
         expires_at: expiresAt,
@@ -144,13 +145,21 @@ export async function createQuoteAction(
 /** Server-side total, so the preview a human sees is the number that is stored. */
 export async function previewQuoteTotalAction(input: {
   serviceFeeKobo: number
-  transportFeeKobo: number
+  serviceChargeKobo: number
   additionalFeeKobo: number
-  platformFeeKobo: number
 }): Promise<ActionResult<{ totalKobo: number }>> {
   try {
     await requireAdminAction()
-    return actionOk({ totalKobo: computeTotal(input) })
+    const serviceCharge = splitServiceCharge(input.serviceChargeKobo)
+    return actionOk({
+      totalKobo: computeTotal({
+        serviceFeeKobo: input.serviceFeeKobo,
+        transportFeeKobo: serviceCharge.transportFeeKobo,
+        additionalFeeKobo: input.additionalFeeKobo,
+        additionalFeeNote: null,
+        platformFeeKobo: serviceCharge.taskExecutionFeeKobo,
+      }),
+    })
   } catch (error) {
     return actionError(toUserMessage(error))
   }

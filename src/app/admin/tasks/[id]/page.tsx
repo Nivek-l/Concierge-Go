@@ -137,8 +137,8 @@ export default async function AdminTaskDetailPage({
                   taskId={id}
                   suggested={{
                     serviceFeeNaira: suggested.serviceFeeKobo / 100,
-                    transportFeeNaira: suggested.transportFeeKobo / 100,
-                    platformFeeNaira: suggested.platformFeeKobo / 100,
+                    serviceChargeNaira:
+                      (suggested.transportFeeKobo + suggested.platformFeeKobo) / 100,
                   }}
                 />
               </CardContent>

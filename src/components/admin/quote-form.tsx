@@ -21,13 +21,14 @@ export function QuoteForm({
   suggested,
 }: {
   taskId: string
-  suggested?: { serviceFeeNaira: number; transportFeeNaira: number; platformFeeNaira: number }
+  suggested?: { serviceFeeNaira: number; serviceChargeNaira: number }
 }) {
   const router = useRouter()
   const [serviceFee, setServiceFee] = useState(String(suggested?.serviceFeeNaira ?? ''))
-  const [transportFee, setTransportFee] = useState(String(suggested?.transportFeeNaira ?? '1000'))
+  const [serviceCharge, setServiceCharge] = useState(
+    String(suggested?.serviceChargeNaira ?? ''),
+  )
   const [additionalFee, setAdditionalFee] = useState('0')
-  const [platformFee, setPlatformFee] = useState(String(suggested?.platformFeeNaira ?? ''))
 
   const [state, formAction, isPending] = useActionState<CreateQuoteResult | null, FormData>(
     createQuoteAction,
@@ -42,13 +43,13 @@ export function QuoteForm({
   }, [state, router])
 
   const totalKobo = useMemo(
-    () => toKobo(serviceFee) + toKobo(transportFee) + toKobo(additionalFee) + toKobo(platformFee),
-    [serviceFee, transportFee, additionalFee, platformFee],
+    () => toKobo(serviceFee) + toKobo(serviceCharge) + toKobo(additionalFee),
+    [serviceFee, serviceCharge, additionalFee],
   )
-  const agentShareKobo = useMemo(
-    () => Math.round(toKobo(platformFee) * 0.6),
-    [platformFee],
-  )
+  const serviceChargeKobo = toKobo(serviceCharge)
+  const transportKobo = Math.round(serviceChargeKobo * 0.2)
+  const executionKobo = serviceChargeKobo - transportKobo
+  const agentShareKobo = Math.round(serviceChargeKobo * 0.6)
 
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined
 
@@ -72,65 +73,67 @@ export function QuoteForm({
             />
           )}
         </Field>
-        <Field name="transportFeeNaira" label="Transportation (₦)" required error={fieldErrors?.transportFeeNaira}>
+        <Field
+          name="serviceChargeNaira"
+          label="Total service charge (₦)"
+          required
+          hint="Transportation and task execution are calculated automatically."
+          error={fieldErrors?.serviceChargeNaira}
+        >
           {(props) => (
             <Input
               {...props}
-              name="transportFeeNaira"
+              name="serviceChargeNaira"
               type="number"
               min="0"
               step="50"
-              value={transportFee}
-              onChange={(e) => setTransportFee(e.target.value)}
+              value={serviceCharge}
+              onChange={(e) => setServiceCharge(e.target.value)}
               required
             />
           )}
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="additionalFeeNaira" label="Additional charges (₦)" hint="Optional">
-          {(props) => (
-            <Input
-              {...props}
-              name="additionalFeeNaira"
-              type="number"
-              min="0"
-              step="50"
-              value={additionalFee}
-              onChange={(e) => setAdditionalFee(e.target.value)}
-            />
-          )}
-        </Field>
-        <Field name="platformFeeNaira" label="Task execution fee (₦)" required error={fieldErrors?.platformFeeNaira}>
-          {(props) => (
-            <Input
-              {...props}
-              name="platformFeeNaira"
-              type="number"
-              min="0"
-              step="50"
-              value={platformFee}
-              onChange={(e) => setPlatformFee(e.target.value)}
-              required
-            />
-          )}
-        </Field>
-      </div>
+      <Field name="additionalFeeNaira" label="Additional charges (₦)" hint="Optional">
+        {(props) => (
+          <Input
+            {...props}
+            name="additionalFeeNaira"
+            type="number"
+            min="0"
+            step="50"
+            value={additionalFee}
+            onChange={(e) => setAdditionalFee(e.target.value)}
+          />
+        )}
+      </Field>
 
       <Field name="additionalFeeNote" label="Note for additional charges" hint="Shown to the customer if there's an additional charge">
         {(props) => <Input {...props} name="additionalFeeNote" placeholder="e.g. Parking / entry fee" />}
       </Field>
 
       <div className="rounded-lg border bg-muted/40 p-3.5 text-sm">
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span>Transportation (20%)</span>
+          <span>{formatNaira(transportKobo)}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-muted-foreground">
+          <span>Task execution fee (80%)</span>
+          <span>{formatNaira(executionKobo)}</span>
+        </div>
+        <div className="my-2 border-t" />
         <div className="flex items-center justify-between">
-          <span className="font-medium">Go Agent share (60%)</span>
+          <span className="font-medium">Go Agent payout (60% of service charge)</span>
           <span className="font-semibold">{formatNaira(agentShareKobo)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-muted-foreground">
-          <span>Concierge Go share (40%)</span>
-          <span>{formatNaira(toKobo(platformFee) - agentShareKobo)}</span>
+          <span>Concierge Go share (40% of service charge)</span>
+          <span>{formatNaira(serviceChargeKobo - agentShareKobo)}</span>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Transportation is included in the agent payout; it is not added twice.
+        </p>
       </div>
 
       <Field name="notes" label="Notes for the customer" hint="Optional">

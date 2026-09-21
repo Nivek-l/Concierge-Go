@@ -129,20 +129,20 @@ export default function HowItWorksPage() {
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-muted-foreground">Task execution fee</dt>
-                  <dd className="font-medium tabular-nums">{formatNaira(30000)}</dd>
+                  <dd className="font-medium tabular-nums">{formatNaira(400000)}</dd>
                 </div>
               </dl>
 
               <div className="mt-4 flex items-baseline justify-between gap-4 border-t pt-4">
                 <span className="font-display text-base font-semibold">Total</span>
                 <span className="font-display text-2xl font-bold tabular-nums">
-                  {formatNaira(330000)}
+                  {formatNaira(700000)}
                 </span>
               </div>
 
               <p className="mt-4 text-xs text-muted-foreground text-pretty">
-                An illustration, not a fixed price. Your quote depends on the task, the distance and
-                how urgent it is.
+                An illustration, not a fixed price. Transportation is 20% of the service charge;
+                task execution is the remaining 80%.
               </p>
             </div>
           </div>

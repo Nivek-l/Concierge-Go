@@ -44,6 +44,26 @@ export function calculatePlatformFee(subtotalKobo: number) {
   return roundToNearestFifty(Math.max(derived, PRICING.minPlatformFeeKobo))
 }
 
+/**
+ * Operations enters one service charge. The customer-facing quote explains it
+ * as 20% transportation and 80% task execution, while the commercial split is
+ * independently calculated over the complete service charge.
+ */
+export function splitServiceCharge(serviceChargeKobo: number) {
+  const transportFeeKobo = Math.round(
+    serviceChargeKobo * PRICING.transportShareOfServiceCharge,
+  )
+  const taskExecutionFeeKobo = serviceChargeKobo - transportFeeKobo
+  const agentPayoutKobo = Math.round(serviceChargeKobo * PRICING.agentShareOfServiceCharge)
+
+  return {
+    transportFeeKobo,
+    taskExecutionFeeKobo,
+    agentPayoutKobo,
+    conciergeShareKobo: serviceChargeKobo - agentPayoutKobo,
+  }
+}
+
 export function suggestQuote(params: SuggestQuoteParams): QuoteBreakdown {
   const urgencyMultiplier = URGENCY_META[params.urgency].multiplier
   const complexityMultiplier = COMPLEXITY_MULTIPLIER[params.complexity ?? 'medium']
@@ -52,31 +72,31 @@ export function suggestQuote(params: SuggestQuoteParams): QuoteBreakdown {
     params.baseServiceFeeKobo * urgencyMultiplier * complexityMultiplier,
   )
 
-  // A second location means a second trip.
-  const transportFeeKobo = roundToNearestFifty(
+  // Preserve distance and urgency in the suggested combined service charge;
+  // operations still enters only one figure in the quote builder.
+  const suggestedTransportKobo = roundToNearestFifty(
     PRICING.transportBaseKobo * (params.destinationRequired ? 1.8 : 1) * urgencyMultiplier,
   )
-
-  const subtotal = serviceFeeKobo + transportFeeKobo
-  const platformFeeKobo = calculatePlatformFee(subtotal)
+  const suggestedExecutionKobo = calculatePlatformFee(serviceFeeKobo + suggestedTransportKobo)
+  const serviceCharge = splitServiceCharge(suggestedTransportKobo + suggestedExecutionKobo)
 
   return {
     serviceFeeKobo,
-    transportFeeKobo,
+    transportFeeKobo: serviceCharge.transportFeeKobo,
     additionalFeeKobo: 0,
     additionalFeeNote: null,
-    platformFeeKobo,
-    totalKobo: subtotal + platformFeeKobo,
-    agentPayoutKobo: suggestAgentPayout(platformFeeKobo),
+    platformFeeKobo: serviceCharge.taskExecutionFeeKobo,
+    totalKobo: serviceFeeKobo + suggestedTransportKobo + suggestedExecutionKobo,
+    agentPayoutKobo: serviceCharge.agentPayoutKobo,
   }
 }
 
 /**
- * What the agent earns: 60% of the variable task execution fee. Transport and
- * other approved task costs stay outside this split.
+ * What the agent earns: 60% of the complete service charge. Transportation is
+ * already included in this payout and must not be added to it a second time.
  */
-export function suggestAgentPayout(taskExecutionFeeKobo: number) {
-  return Math.round(taskExecutionFeeKobo * PRICING.agentShareOfTaskExecutionFee)
+export function suggestAgentPayout(serviceChargeKobo: number) {
+  return splitServiceCharge(serviceChargeKobo).agentPayoutKobo
 }
 
 export function computeTotal(breakdown: Omit<QuoteBreakdown, 'totalKobo' | 'agentPayoutKobo'>) {
@@ -104,18 +124,19 @@ export function reviewQuote(
   const issues: QuoteValidationIssue[] = []
   const subtotal = breakdown.serviceFeeKobo + breakdown.transportFeeKobo + breakdown.additionalFeeKobo
 
-  if (breakdown.agentPayoutKobo !== suggestAgentPayout(breakdown.platformFeeKobo)) {
+  const serviceChargeKobo = breakdown.transportFeeKobo + breakdown.platformFeeKobo
+  if (breakdown.agentPayoutKobo !== suggestAgentPayout(serviceChargeKobo)) {
     issues.push({
       field: 'agentPayoutNaira',
-      message: 'The Go Agent share must be 60% of the task execution fee.',
+      message: 'The Go Agent share must be 60% of the complete service charge.',
     })
   }
 
-  const expectedPlatformFee = calculatePlatformFee(subtotal)
-  if (breakdown.platformFeeKobo < expectedPlatformFee * 0.5) {
+  const expectedServiceCharge = calculatePlatformFee(subtotal)
+  if (serviceChargeKobo < expectedServiceCharge * 0.5) {
     issues.push({
-      field: 'platformFeeNaira',
-      message: 'The task execution fee is well below the usual rate for this subtotal.',
+      field: 'serviceChargeNaira',
+      message: 'The total service charge is well below the usual rate for this task.',
     })
   }
 

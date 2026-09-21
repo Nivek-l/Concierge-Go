@@ -79,8 +79,8 @@ export default async function AdminPayoutsPage({
                   </div>
                   <dl className="grid min-w-48 gap-1 text-sm sm:text-right">
                     <div className="flex justify-between gap-4 sm:justify-end">
-                      <dt className="text-muted-foreground">Task execution fee</dt>
-                      <dd className="font-semibold">{formatNaira(entry.task_execution_fee_kobo)}</dd>
+                      <dt className="text-muted-foreground">Total service charge</dt>
+                      <dd className="font-semibold">{formatNaira(entry.service_charge_kobo)}</dd>
                     </div>
                     <div className="flex justify-between gap-4 sm:justify-end">
                       <dt className="text-muted-foreground">Go Agent (60%)</dt>
