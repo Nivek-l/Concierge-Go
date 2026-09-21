@@ -311,7 +311,7 @@ export async function confirmCompletionAction(
 
     const { data: assignment } = await supabase
       .from('task_assignments')
-      .select('id, agent_id')
+      .select('id, agent_id, agent_payout_kobo')
       .eq('task_id', taskId)
       .eq('status', 'active')
       .maybeSingle()
@@ -329,6 +329,29 @@ export async function confirmCompletionAction(
     if (error) throw error
     if (!completedTask) return actionError('This task has already been updated.')
 
+    // Release the agent explicitly as well as through the database trigger.
+    // This keeps production correct even if an older deployment missed the
+    // trigger migration, while the repair migration backfills existing rows.
+    const { error: assignmentError } = await admin
+      .from('task_assignments')
+      .update({ status: 'completed', completed_at: completedAt })
+      .eq('task_id', taskId)
+      .eq('status', 'active')
+
+    if (assignmentError) throw assignmentError
+
+    if (assignment && Number(assignment.agent_payout_kobo) > 0) {
+      const { error: payoutError } = await admin.from('agent_payouts').upsert({
+        assignment_id: assignment.id as string,
+        task_id: taskId,
+        agent_id: assignment.agent_id as string,
+        amount_kobo: Number(assignment.agent_payout_kobo),
+        status: 'pending',
+        available_at: completedAt,
+      }, { onConflict: 'assignment_id', ignoreDuplicates: true })
+      if (payoutError) throw payoutError
+    }
+
     let agentProfileId: string | null = null
 
     if (assignment) {
@@ -341,15 +364,36 @@ export async function confirmCompletionAction(
       agentProfileId = (agent?.profile_id as string | undefined) ?? null
 
       if (rating) {
-        // A trigger recomputes the agent's average from this row.
-        const { error: reviewError } = await supabase.from('reviews').insert({
+        // Use the already-authorized service client so saving a rating cannot
+        // fail because the task changed status in the same action. The repair
+        // trigger recalculates the aggregate from every review.
+        const { error: reviewError } = await admin.from('reviews').upsert({
           task_id: taskId,
           customer_id: user.id,
           agent_id: assignment.agent_id as string,
           rating,
           comment,
-        })
-        if (reviewError) logError('tasks.confirmCompletion.review', reviewError, { taskId })
+        }, { onConflict: 'task_id' })
+        if (reviewError) throw reviewError
+
+        // Defence in depth for databases that have not received the repair
+        // trigger yet. The database trigger remains the concurrency-safe source
+        // of truth once the migration is applied.
+        const { data: ratings, error: ratingsError } = await admin
+          .from('reviews')
+          .select('rating')
+          .eq('agent_id', assignment.agent_id as string)
+        if (ratingsError) throw ratingsError
+
+        const values = (ratings ?? []).map((item) => Number(item.rating))
+        const average = values.length
+          ? Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100
+          : 0
+        const { error: aggregateError } = await admin
+          .from('agents')
+          .update({ rating: average, rating_count: values.length })
+          .eq('id', assignment.agent_id as string)
+        if (aggregateError) throw aggregateError
       }
     }
 

@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bot, Loader2, Send, Sparkles, UserRound } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 import type { AiChatMessage, AiTaskDraft } from '@/services/ai/types'
 import { Button } from '@/components/ui/button'
@@ -141,13 +143,13 @@ export function AiTaskChat() {
                     </span>
                   ) : null}
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       assistant
                         ? 'rounded-tl-md bg-muted text-foreground'
-                        : 'rounded-tr-md bg-primary text-primary-foreground'
+                        : 'whitespace-pre-wrap rounded-tr-md bg-primary text-primary-foreground'
                     }`}
                   >
-                    {message.content}
+                    {assistant ? <AssistantMarkdown content={message.content} /> : message.content}
                   </div>
                   {!assistant ? (
                     <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -257,5 +259,43 @@ export function AiTaskChat() {
         ) : null}
       </div>
     </div>
+  )
+}
+
+function AssistantMarkdown({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
+        ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
+        code: ({ children }) => (
+          <code className="rounded bg-background/70 px-1 py-0.5 font-mono text-[0.85em]">
+            {children}
+          </code>
+        ),
+        pre: ({ children }) => (
+          <pre className="my-2 overflow-x-auto rounded-lg bg-background/70 p-3 text-xs">
+            {children}
+          </pre>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="my-2 border-l-2 border-primary/40 pl-3 text-muted-foreground">
+            {children}
+          </blockquote>
+        ),
+        a: ({ children, href }) => (
+          <a href={href} target="_blank" rel="noreferrer" className="font-medium text-primary underline underline-offset-2">
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
   )
 }
