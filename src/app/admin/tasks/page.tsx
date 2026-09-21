@@ -119,21 +119,21 @@ export default async function AdminTasksPage({
                 <li key={task.id}>
                   <Link
                     href={`/admin/tasks/${task.id}`}
-                    className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                    className="flex min-w-0 flex-col gap-2 px-5 py-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-semibold">{task.title}</p>
+                    <div className="w-full min-w-0 sm:flex-1">
+                      <div className="flex min-w-0 flex-wrap items-start gap-2">
+                        <p className="min-w-0 max-w-full flex-1 basis-48 break-words text-sm font-semibold [overflow-wrap:anywhere] sm:truncate">{task.title}</p>
                         <UrgencyBadge urgency={task.urgency} />
                         {task.has_open_dispute ? <Badge variant="danger">Disputed</Badge> : null}
                       </div>
-                      <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                      <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         {task.reference} · {task.customer_name} · {task.category_name}
                         {task.agent_name ? ` · ${task.agent_name}` : ''} ·{' '}
                         {formatFriendlyDate(task.created_at)}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
+                    <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:w-auto sm:shrink-0 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
                       <TaskStatusBadge status={task.status} perspective="admin" />
                       {task.total_kobo ? (
                         <span className="text-xs font-medium text-muted-foreground">

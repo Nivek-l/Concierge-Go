@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 import type { AiChatMessage, AiTaskDraft } from '@/services/ai/types'
+import { cleanAiChatReply, TOOL_CALL_FALLBACK } from '@/services/ai/sanitize'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -41,7 +42,23 @@ export function AiTaskChat() {
       if (!stored) return
       const parsed = JSON.parse(stored) as AiChatMessage[]
       if (Array.isArray(parsed) && parsed.some((message) => message.role === 'user')) {
-        setMessages(parsed.slice(-30))
+        const cleaned = parsed
+          .slice(-30)
+          .filter(
+            (message) =>
+              message &&
+              (message.role === 'user' || message.role === 'assistant') &&
+              typeof message.content === 'string',
+          )
+          .map((message) => ({
+            ...message,
+            content:
+              message.role === 'assistant'
+                ? cleanAiChatReply(message.content) || TOOL_CALL_FALLBACK
+                : message.content.trim(),
+          }))
+          .filter((message) => message.content.length > 0)
+        setMessages(cleaned)
       }
     } catch {
       sessionStorage.removeItem(AI_CHAT_STORAGE_KEY)
@@ -263,6 +280,8 @@ export function AiTaskChat() {
 }
 
 function AssistantMarkdown({ content }: { content: string }) {
+  const safeContent = cleanAiChatReply(content) || TOOL_CALL_FALLBACK
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -295,7 +314,7 @@ function AssistantMarkdown({ content }: { content: string }) {
         ),
       }}
     >
-      {content}
+      {safeContent}
     </ReactMarkdown>
   )
 }

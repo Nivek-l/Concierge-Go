@@ -63,7 +63,10 @@ export function TaskStatusBadge({
   const isLive = ['en_route', 'arrived', 'in_progress'].includes(status)
 
   return (
-    <Badge variant={TONE_TO_VARIANT[meta.tone]} className={className}>
+    <Badge
+      variant={TONE_TO_VARIANT[meta.tone]}
+      className={cn('max-w-full shrink-0 whitespace-normal text-left leading-tight', className)}
+    >
       {showDot ? (
         <span className="relative flex h-1.5 w-1.5">
           {isLive ? (
@@ -86,7 +89,10 @@ export function UrgencyBadge({ urgency, className }: { urgency: TaskUrgency; cla
   const meta = URGENCY_META[urgency]
   if (urgency === 'standard') return null
   return (
-    <Badge variant={TONE_TO_VARIANT[meta.tone]} className={className}>
+    <Badge
+      variant={TONE_TO_VARIANT[meta.tone]}
+      className={cn('max-w-full shrink-0 whitespace-nowrap', className)}
+    >
       {meta.label}
     </Badge>
   )

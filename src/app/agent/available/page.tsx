@@ -40,10 +40,10 @@ export default async function AvailableTasksPage() {
           {tasks.map((task) => (
             <Card key={task.id}>
               <CardContent className="space-y-3 pt-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-semibold [overflow-wrap:anywhere]">{task.title}</p>
+                    <p className="break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                       {task.reference} · {task.category_name}
                     </p>
                   </div>
@@ -53,23 +53,23 @@ export default async function AvailableTasksPage() {
                   {task.summary}
                 </p>
                 <dl className="space-y-1 text-xs text-muted-foreground">
-                  <div className="flex justify-between">
+                  <div className="flex min-w-0 flex-wrap justify-between gap-2">
                     <dt>Area</dt>
-                    <dd className="font-medium text-foreground">
+                    <dd className="min-w-0 break-words text-right font-medium text-foreground [overflow-wrap:anywhere]">
                       {task.location_area ?? task.city_name ?? 'Calabar'}
                     </dd>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex min-w-0 flex-wrap justify-between gap-2">
                     <dt>Timing</dt>
-                    <dd className="font-medium text-foreground">
+                    <dd className="min-w-0 break-words text-right font-medium text-foreground [overflow-wrap:anywhere]">
                       {task.preferred_date ? formatFriendlyDate(task.preferred_date) : 'Flexible'}
                       {task.preferred_time_slot ? ` · ${task.preferred_time_slot}` : ''}
                     </dd>
                   </div>
                   {task.destination_required ? (
-                    <div className="flex justify-between">
+                    <div className="flex min-w-0 flex-wrap justify-between gap-2">
                       <dt>Delivery</dt>
-                      <dd className="font-medium text-foreground">Second stop required</dd>
+                      <dd className="break-words text-right font-medium text-foreground">Second stop required</dd>
                     </div>
                   ) : null}
                 </dl>

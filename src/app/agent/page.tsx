@@ -120,17 +120,17 @@ export default async function AgentDashboardPage() {
                 <li key={task.id}>
                   <Link
                     href={`/agent/tasks/${task.id}`}
-                    className="flex flex-col items-start gap-2 py-3.5 transition-colors hover:opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                    className="flex min-w-0 flex-col items-start gap-2 py-3.5 transition-colors hover:opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{task.title}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                    <div className="w-full min-w-0 sm:flex-1">
+                      <p className="break-words text-sm font-semibold [overflow-wrap:anywhere] sm:truncate">{task.title}</p>
+                      <p className="mt-0.5 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                         {task.reference} · {task.category_name}
                         {task.location_area ? ` · ${task.location_area}` : ''} ·{' '}
                         {formatFriendlyDate(task.preferred_date)}
                       </p>
                     </div>
-                    <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
+                    <div className="flex w-full min-w-0 flex-row flex-wrap items-center justify-between gap-2 sm:w-auto sm:shrink-0 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
                       <TaskStatusBadge status={task.status} perspective="agent" />
                       {AGENT_ACTION_LABEL[task.status] ? (
                         <span className="text-xs font-medium text-primary">

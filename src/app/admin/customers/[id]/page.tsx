@@ -80,18 +80,18 @@ export default async function AdminCustomerDetailPage({
                     <li key={task.id}>
                       <Link
                         href={`/admin/tasks/${task.id}`}
-                        className="flex items-center justify-between gap-3 py-3 transition-colors hover:opacity-80"
+                        className="flex min-w-0 flex-col items-start gap-2 py-3 transition-colors hover:opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                       >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-medium">{task.title}</p>
+                        <div className="w-full min-w-0 sm:flex-1">
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                            <p className="break-words text-sm font-medium [overflow-wrap:anywhere] sm:truncate">{task.title}</p>
                             <UrgencyBadge urgency={task.urgency} />
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                             {task.reference} · {formatFriendlyDate(task.created_at)}
                           </p>
                         </div>
-                        <TaskStatusBadge status={task.status} perspective="admin" />
+                        <TaskStatusBadge status={task.status} perspective="admin" className="self-start sm:self-auto" />
                       </Link>
                     </li>
                   ))}
