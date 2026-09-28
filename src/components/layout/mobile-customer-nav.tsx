@@ -6,12 +6,19 @@ import { Home, ListTodo, MapPinned, Plus } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-const ITEMS = [
+interface MobileNavItem {
+  href: string
+  label: string
+  icon: typeof Home
+  primary?: boolean
+}
+
+const ITEMS: MobileNavItem[] = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/tasks', label: 'Tasks', icon: ListTodo },
   { href: '/tasks/new', label: 'New', icon: Plus, primary: true },
   { href: '/track', label: 'Track', icon: MapPinned },
-] as const
+]
 
 export function MobileCustomerNav() {
   const pathname = usePathname()
