@@ -87,8 +87,8 @@
     --popover: 219 34% 10%;
     --popover-foreground: 216 35% 95%;
 
-    --primary: 211 100% 62%;
-    --primary-foreground: 219 60% 10%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
     --primary-subtle: 211 55% 18%;
 
     --secondary: 219 20% 16%;
@@ -122,9 +122,9 @@
     --ring: 211 100% 62%;
 
     --brand-navy: 219 60% 55%;
-    --brand-blue: 211 100% 62%;
-    --brand-orange: 38 100% 58%;
-    --brand-yellow: 49 100% 58%;
+    --brand-blue: 211 100% 50%;
+    --brand-orange: 38 100% 50%;
+    --brand-yellow: 49 100% 50%;
   }
 }
 

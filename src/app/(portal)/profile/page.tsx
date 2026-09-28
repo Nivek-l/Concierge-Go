@@ -7,6 +7,7 @@ import { formatFriendlyDate } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { AddressList } from '@/components/profile/address-list'
+import { AppearanceSettings } from '@/components/profile/appearance-settings'
 
 export const metadata: Metadata = {
   title: 'Profile',
@@ -38,6 +39,16 @@ export default async function ProfilePage() {
       <Card>
         <CardContent className="pt-6">
           <AddressList addresses={addresses} cities={cities} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">Choose how Concierge Go looks on this device. System follows your device setting.</p>
+          <AppearanceSettings />
         </CardContent>
       </Card>
     </div>

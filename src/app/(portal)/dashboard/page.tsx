@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, ClipboardList, MapPinned, PlusCircle, Receipt } from 'lucide-react'
+import { ArrowRight, ClipboardList, MapPinned, PlusCircle, Receipt, Sparkles } from 'lucide-react'
 
 import { requireCustomer } from '@/lib/auth'
 import { getCustomerDashboard } from '@/database/tasks'
@@ -24,24 +24,26 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Good to see you, {firstName(user.profile.full_name)}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Here is everything happening on your Concierge Go tasks.
-          </p>
+      <section className="relative overflow-hidden rounded-3xl border bg-card p-5 shadow-sm sm:p-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold text-primary">Concierge Go</p>
+            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+              Good to see you, {firstName(user.profile.full_name)}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Request what you need, follow each stage, and keep every quote and update in one place.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><Link href="/tasks/ai"><Sparkles aria-hidden />Ask Concierge AI</Link></Button>
+            <Button asChild><Link href="/tasks/new"><PlusCircle aria-hidden />New Task</Link></Button>
+          </div>
         </div>
-        <Button asChild size="lg">
-          <Link href="/tasks/new">
-            <PlusCircle aria-hidden />
-            Request a Task
-          </Link>
-        </Button>
-      </div>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <SummaryTile label="Active tasks" value={data.activeCount} />
         <SummaryTile label="Completed" value={data.completedCount} />
         <SummaryTile label="Total requests" value={data.totalCount} />
@@ -180,8 +182,8 @@ export default async function DashboardPage() {
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
-    <Card>
-      <CardContent className="pt-5 sm:pt-6">
+    <Card className="overflow-hidden">
+      <CardContent className="relative pt-5 sm:pt-6">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>

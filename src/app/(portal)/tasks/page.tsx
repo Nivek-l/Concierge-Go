@@ -15,9 +15,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function TasksListPage() {
+export default async function TasksListPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await requireCustomer()
-  const tasks = (await getTasksForCustomer(user.id)).filter((task) => task.status !== 'draft')
+  const { q = '' } = await searchParams
+  const needle = q.trim().toLowerCase()
+  const tasks = (await getTasksForCustomer(user.id)).filter((task) => {
+    if (task.status === 'draft') return false
+    if (!needle) return true
+    return [task.title, task.reference, task.category_name, task.location_area, task.city_name]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(needle))
+  })
 
   return (
     <div className="space-y-6">
@@ -27,7 +35,7 @@ export default async function TasksListPage() {
             My tasks
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Every request you have made, and where it stands.
+            {needle ? `Showing results for “${q.trim()}”.` : 'Every request you have made, and where it stands.'}
           </p>
         </div>
         <Button asChild>
@@ -41,8 +49,8 @@ export default async function TasksListPage() {
       {tasks.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="No tasks yet"
-          description="Describe what you need done and Concierge Go will review it and send you a quote."
+          title={needle ? "No matching tasks" : "No tasks yet"}
+          description={needle ? "Try another search term or clear the search field." : "Describe what you need done and Concierge Go will review it and send you a quote."}
           action={{ label: 'Request a Task', href: '/tasks/new' }}
         />
       ) : (
