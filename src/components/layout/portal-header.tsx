@@ -13,7 +13,7 @@ import { PortalSearch } from '@/components/layout/portal-search'
 import { RealtimeRefresh } from '@/components/shared/realtime-refresh'
 import { PushNotificationManager } from '@/components/shared/push-notification-manager'
 
-export interface PortalNavLink { href: string; label: string; icon?: React.ComponentType<{ className?: string }> }
+export interface PortalNavLink { href: string; label: string; }
 export function PortalHeader({ user, links, profileHref = '/profile', eyebrow }: { user: SessionUser; links: PortalNavLink[]; profileHref?: string; eyebrow?: string }) {
   const isCustomer = links.some((link) => link.href === '/dashboard')
   const isAgent = links.some((link) => link.href === '/agent')
