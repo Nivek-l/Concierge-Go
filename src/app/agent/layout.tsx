@@ -1,5 +1,6 @@
 import { requireAgent } from '@/lib/auth'
 import { PortalHeader } from '@/components/layout/portal-header'
+import { MobileAgentNav } from '@/components/layout/mobile-agent-nav'
 
 const LINKS = [
   { href: '/agent', label: 'Dashboard' },
@@ -13,10 +14,21 @@ export default async function AgentLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-dvh flex-col bg-muted/20">
-      <PortalHeader user={user} links={LINKS} profileHref="/agent/profile" eyebrow="Go Agent" />
-      <main id="main" className="container w-full min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <PortalHeader
+        user={user}
+        links={LINKS}
+        profileHref="/agent/profile"
+        eyebrow="Go Agent"
+      />
+
+      <main
+        id="main"
+        className="container w-full min-w-0 flex-1 px-4 py-5 pb-28 sm:px-6 sm:py-8 sm:pb-10 lg:px-8 lg:py-10"
+      >
         {children}
       </main>
+
+      <MobileAgentNav />
     </div>
   )
 }
