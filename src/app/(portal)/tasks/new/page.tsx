@@ -7,7 +7,7 @@ import { NewTaskForm } from '@/components/tasks/new-task-form'
 import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = { title: 'Request a Task', robots: { index: false, follow: false } }
-export default async function NewTaskPage({ searchParams }: { searchParams: Promise<{ mode?: string; source?: string }> }) {
+export default async function NewTaskPage({ searchParams }: { searchParams: Promise<{ mode?: string; source?: string; category?: string }> }) {
   const user = await requireCustomer(); const params = await searchParams
   const showForm = params.mode === 'manual' || params.source === 'ai'
   if (!showForm) return <div className="mx-auto max-w-3xl space-y-7">
@@ -18,5 +18,8 @@ export default async function NewTaskPage({ searchParams }: { searchParams: Prom
     </div>
   </div>
   const [categories, cities] = await Promise.all([getCategories(), getLiveCities()])
-  return <div className="mx-auto max-w-2xl"><Link href="/tasks/new" className="mb-5 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" />Choose another method</Link><div className="mb-7"><p className="text-sm font-semibold text-primary">{params.source === 'ai' ? 'AI-assisted request' : 'Manual request'}</p><h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">{params.source === 'ai' ? 'Review your request' : 'Request a Task'}</h1><p className="mt-1.5 text-sm text-muted-foreground">Review every detail before submitting. Concierge Go will send a transparent quote before anything is scheduled.</p></div><NewTaskForm categories={categories} cities={cities} defaultPhone={user.profile.phone} /></div>
+  const requestedCategory = categories.some((category) => category.slug === params.category)
+    ? params.category
+    : undefined
+  return <div className="mx-auto max-w-2xl"><Link href="/tasks/new" className="mb-5 inline-flex min-h-11 items-center gap-1 rounded-lg pr-2 text-sm font-semibold text-muted-foreground hover:text-foreground"><ChevronLeft className="h-4 w-4" aria-hidden />Choose another method</Link><div className="mb-7"><p className="text-sm font-semibold text-primary">{params.source === 'ai' ? 'AI-assisted request' : 'Manual request'}</p><h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">{params.source === 'ai' ? 'Review your request' : 'Request a Task'}</h1><p className="mt-1.5 text-sm text-muted-foreground">Review every detail before submitting. Concierge Go will send a transparent quote before anything is scheduled.</p></div><NewTaskForm categories={categories} cities={cities} defaultPhone={user.profile.phone} initialCategorySlug={requestedCategory} /></div>
 }

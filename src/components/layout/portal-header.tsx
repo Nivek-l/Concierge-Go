@@ -79,7 +79,7 @@ export function PortalHeader({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-full p-0.5 pr-1 transition hover:bg-muted sm:pr-2"
+                  className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full p-0.5 pr-1 transition hover:bg-muted sm:pr-2"
                   aria-label="Account menu"
                 >
                   <Avatar className="h-9 w-9">

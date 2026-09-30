@@ -54,6 +54,8 @@ export function ProofReviewPanel({ taskId }: { taskId: string }) {
                 type="button"
                 onClick={() => setRating(value === rating ? 0 : value)}
                 aria-label={`${value} star${value === 1 ? '' : 's'}`}
+                aria-pressed={value === rating}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg"
               >
                 <Star
                   className={cn(

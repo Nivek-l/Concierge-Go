@@ -25,10 +25,12 @@ export function NewTaskForm({
   categories,
   cities,
   defaultPhone,
+  initialCategorySlug,
 }: {
   categories: TaskCategoryRow[]
   cities: CityRow[]
   defaultPhone: string | null
+  initialCategorySlug?: string
 }) {
   const router = useRouter()
   const [draftTaskId, setDraftTaskId] = useState<string | null>(null)
@@ -181,7 +183,7 @@ export function NewTaskForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field name="categorySlug" label="Category" required error={fieldErrors?.categorySlug}>
             {() => (
-              <Select name="categorySlug" defaultValue={categories.some((category) => category.slug === initialDraft?.categorySlug) ? initialDraft?.categorySlug : categories[0]?.slug}>
+              <Select name="categorySlug" defaultValue={categories.some((category) => category.slug === initialDraft?.categorySlug) ? initialDraft?.categorySlug : initialCategorySlug ?? categories[0]?.slug}>
                 <SelectTrigger id="field-categorySlug">
                   <SelectValue placeholder="Choose a category" />
                 </SelectTrigger>

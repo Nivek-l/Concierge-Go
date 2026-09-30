@@ -78,7 +78,7 @@ export function SignInForm({ next }: { next?: string }) {
               <button
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
-                className="absolute right-1 top-1 flex h-8 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -90,7 +90,7 @@ export function SignInForm({ next }: { next?: string }) {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-sm font-medium text-primary hover:underline"
+            className="inline-flex min-h-11 items-center rounded-lg px-1 text-sm font-medium text-primary hover:underline"
           >
             Forgot your password?
           </Link>
@@ -103,13 +103,13 @@ export function SignInForm({ next }: { next?: string }) {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New to Concierge Go?{' '}
-        <Link href="/sign-up" className="font-medium text-primary hover:underline">
+        <Link href="/sign-up" className="inline-flex min-h-11 items-center px-1 font-medium text-primary hover:underline">
           Create an account
         </Link>
       </p>
       <p className="mt-2 text-center text-sm text-muted-foreground">
         Want to work with us?{' '}
-        <Link href="/sign-up/agent" className="font-medium text-primary hover:underline">
+        <Link href="/sign-up/agent" className="inline-flex min-h-11 items-center px-1 font-medium text-primary hover:underline">
           Become a Go Agent
         </Link>
       </p>

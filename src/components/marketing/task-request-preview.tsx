@@ -66,7 +66,7 @@ export function TaskRequestPreview() {
   }
 
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-lift sm:p-6">
+    <div className="min-w-0 rounded-2xl border bg-card p-4 shadow-lift min-[360px]:p-5 sm:p-6">
       <div className="flex items-center gap-2 text-sm font-medium text-primary">
         <Sparkles className="h-4 w-4" aria-hidden />
         Start here
@@ -100,7 +100,7 @@ export function TaskRequestPreview() {
                 type="button"
                 onClick={() => handleExample(example)}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                  'min-h-11 rounded-full border px-3 py-2 text-xs font-medium transition-colors',
                   activeExample === example.label
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',

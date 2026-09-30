@@ -52,13 +52,13 @@ export function SiteFooter() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0" aria-hidden />
-                <a href={`tel:${publicEnv.supportPhone}`} className="hover:text-foreground">
+                <a href={`tel:${publicEnv.supportPhone}`} className="inline-flex min-h-11 items-center hover:text-foreground">
                   {formatPhone(publicEnv.supportPhone)}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0" aria-hidden />
-                <a href={`mailto:${publicEnv.supportEmail}`} className="hover:text-foreground">
+                <a href={`mailto:${publicEnv.supportEmail}`} className="inline-flex min-h-11 items-center hover:text-foreground">
                   {publicEnv.supportEmail}
                 </a>
               </li>
@@ -68,12 +68,12 @@ export function SiteFooter() {
           {FOOTER_SECTIONS.map((section) => (
             <div key={section.title}>
               <h3 className="text-sm font-semibold">{section.title}</h3>
-              <ul className="mt-4 space-y-2.5">
+              <ul className="mt-2 space-y-0.5">
                 {section.links.map((link) => (
                   <li key={`${section.title}-${link.href}-${link.label}`}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
                     </Link>

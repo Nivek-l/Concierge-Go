@@ -38,8 +38,8 @@ export default async function HomePage() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" aria-hidden />
 
         <div className="container relative py-14 sm:py-20 lg:py-24">
-          <div className="grid items-start gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-            <div className="animate-fade-up">
+          <div className="grid min-w-0 items-start gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+            <div className="min-w-0 animate-fade-up">
               <span className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-soft">
                 <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden />
                 Now live in {LAUNCH_CITY.label}
@@ -78,7 +78,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="animate-fade-up lg:sticky lg:top-24 [animation-delay:120ms]">
+            <div className="min-w-0 animate-fade-up lg:sticky lg:top-24 [animation-delay:120ms]">
               <TaskRequestPreview />
             </div>
           </div>

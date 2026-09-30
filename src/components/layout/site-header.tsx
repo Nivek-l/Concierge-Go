@@ -28,7 +28,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="container flex h-16 items-center justify-between gap-4">
+      <div className="container flex h-16 min-w-0 items-center justify-between gap-2 min-[360px]:gap-4">
         <Logo />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
@@ -56,7 +56,7 @@ export async function SiteHeader() {
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link href="/sign-in">Sign in</Link>
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="hidden min-[360px]:inline-flex">
                 <Link href="/tasks/new">Request a Task</Link>
               </Button>
             </>

@@ -139,7 +139,7 @@ export function SignUpForm({ cities }: { cities: CityRow[] }) {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-1 top-1 flex h-8 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -166,13 +166,13 @@ export function SignUpForm({ cities }: { cities: CityRow[] }) {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link href="/sign-in" className="font-medium text-primary hover:underline">
+        <Link href="/sign-in" className="inline-flex min-h-11 items-center px-1 font-medium text-primary hover:underline">
           Sign in
         </Link>
       </p>
       <p className="mt-2 text-center text-sm text-muted-foreground">
         Want to work with us?{' '}
-        <Link href="/sign-up/agent" className="font-medium text-primary hover:underline">
+        <Link href="/sign-up/agent" className="inline-flex min-h-11 items-center px-1 font-medium text-primary hover:underline">
           Become a Go Agent
         </Link>
       </p>

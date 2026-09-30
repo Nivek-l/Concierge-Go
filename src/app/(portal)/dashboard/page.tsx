@@ -1,6 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, ClipboardList, MapPinned, PlusCircle, Receipt, Sparkles } from 'lucide-react'
+import {
+  ArrowRight,
+  ClipboardList,
+  FileText,
+  House,
+  MapPinned,
+  PackageCheck,
+  PlusCircle,
+  Receipt,
+  ShoppingBasket,
+  Sparkles,
+} from 'lucide-react'
 
 import { requireCustomer } from '@/lib/auth'
 import { getCustomerDashboard } from '@/database/tasks'
@@ -10,6 +21,33 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/shared/empty-state'
 import { TaskStatusBadge, UrgencyBadge } from '@/components/shared/status-badge'
+
+const POPULAR_REQUESTS = [
+  {
+    label: 'Groceries',
+    description: 'Shopping and delivery',
+    category: 'shopping-sourcing',
+    icon: ShoppingBasket,
+  },
+  {
+    label: 'Documents',
+    description: 'Submit or collect',
+    category: 'documents-administration',
+    icon: FileText,
+  },
+  {
+    label: 'Pickup',
+    description: 'Collect and deliver',
+    category: 'personal-errands',
+    icon: PackageCheck,
+  },
+  {
+    label: 'Inspection',
+    description: 'On-site checks',
+    category: 'property-verification',
+    icon: House,
+  },
+] as const
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -40,6 +78,43 @@ export default async function DashboardPage() {
             <Button asChild variant="outline"><Link href="/tasks/ai"><Sparkles aria-hidden />Ask Concierge AI</Link></Button>
             <Button asChild><Link href="/tasks/new"><PlusCircle aria-hidden />New Task</Link></Button>
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="popular-requests-heading">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick start</p>
+            <h2 id="popular-requests-heading" className="mt-1 text-lg font-bold sm:text-xl">
+              Popular requests
+            </h2>
+          </div>
+          <Link
+            href="/tasks/new"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-primary hover:underline"
+          >
+            See all
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {POPULAR_REQUESTS.map((request) => {
+            const Icon = request.icon
+            return (
+              <Link
+                key={request.label}
+                href={`/tasks/new?mode=manual&category=${request.category}`}
+                className="group min-w-0 rounded-2xl border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:p-5"
+              >
+                <span className="inline-flex rounded-xl bg-primary-subtle p-2.5 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <span className="mt-4 block break-words text-sm font-bold sm:text-base">{request.label}</span>
+                <span className="mt-1 block break-words text-xs leading-5 text-muted-foreground">
+                  {request.description}
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </section>
 

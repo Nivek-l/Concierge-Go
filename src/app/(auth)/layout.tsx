@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Logo />
           <Link
             href="/"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Back to site
           </Link>
