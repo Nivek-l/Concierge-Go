@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://sitemaps.org">
+  <!-- Your main homepage -->
+  <url>
+    <loc>https://conciergego.vercel.app/</loc>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Example of another page (Change or delete this if you don't have it) -->
+  <url>
+    <loc>https://vercel.app</loc>
+    <priority>0.8</priority>
+  </url>
+</urlset>
