@@ -44,7 +44,7 @@ export default async function TrackPage() {
             return (
               <Link
                 key={task.id}
-                href={`/tasks/${task.id}`}
+                href={`/tasks/${task.id}?view=tracking`}
                 className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Card className="transition group-hover:border-primary/40 group-hover:shadow-md group-focus-visible:border-primary/40">

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Home, ListTodo, MapPinned, Plus } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -20,15 +20,20 @@ const ITEMS: MobileNavItem[] = [
   { href: '/track', label: 'Track', icon: MapPinned },
 ]
 
-function isItemActive(pathname: string, href: string) {
+function isItemActive(pathname: string, href: string, trackingView: boolean) {
   if (href === '/dashboard') return pathname === '/dashboard'
-  if (href === '/tasks') return pathname === '/tasks' || /^\/tasks\/[^/]+$/.test(pathname)
+  if (href === '/tasks') {
+    return pathname === '/tasks' || (!trackingView && /^\/tasks\/[^/]+$/.test(pathname))
+  }
   if (href === '/tasks/new') return pathname.startsWith('/tasks/new') || pathname.startsWith('/tasks/ai')
-  return pathname.startsWith(href)
+  if (href === '/track') return pathname.startsWith('/track') || trackingView
+  return false
 }
 
 export function MobileCustomerNav() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const trackingView = searchParams.get('view') === 'tracking' && /^\/tasks\/[^/]+$/.test(pathname)
 
   return (
     <nav
@@ -37,7 +42,7 @@ export function MobileCustomerNav() {
     >
       <div className="mx-auto grid max-w-md grid-cols-4 items-center rounded-[1.7rem] border bg-background/92 p-1.5 shadow-xl backdrop-blur-xl">
         {ITEMS.map((item) => {
-          const active = isItemActive(pathname, item.href)
+          const active = isItemActive(pathname, item.href, trackingView)
           const Icon = item.icon
 
           return (
@@ -49,13 +54,11 @@ export function MobileCustomerNav() {
                 'relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.2rem] px-2 text-[10px] font-semibold transition-all',
                 active
                   ? 'bg-primary text-primary-foreground shadow-md'
-                  : item.action
-                    ? 'text-primary hover:bg-primary-subtle'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
               <Icon
-                className={cn('h-[19px] w-[19px]', item.action && !active && 'h-6 w-6')}
+                className={cn('h-[19px] w-[19px]', item.action && 'h-6 w-6')}
                 aria-hidden
               />
               <span>{item.label}</span>

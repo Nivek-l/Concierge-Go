@@ -14,6 +14,9 @@ export const publicEnv = {
   supportPhone: process.env.NEXT_PUBLIC_SUPPORT_PHONE ?? '+2347065582830',
   supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? 'hello@conciergego.ng',
   vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '',
+  routingApiUrl:
+    process.env.NEXT_PUBLIC_ROUTING_API_URL?.replace(/\/+$/, '') ??
+    'https://router.project-osrm.org',
 } as const
 
 /** True when Supabase is configured. Used to show setup guidance instead of crashing. */

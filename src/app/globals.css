@@ -205,6 +205,13 @@
   .pb-safe {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
+
+  /* Leaflet's defaults are 30px; keep map controls comfortably touchable. */
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
 }
 
 @layer utilities {

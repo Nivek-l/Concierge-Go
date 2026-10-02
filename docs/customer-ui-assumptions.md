@@ -13,6 +13,8 @@ The supplied `Concierge-Go-Interactive-Prototype.html` is treated as a visual an
 - “Popular requests” are shortcuts into the existing manual request flow. The customer still reviews and supplies required details before submission.
 - AI output is always a draft. The customer must review the normal request form before submitting.
 - Live location, Paystack payments, notifications, uploads, and AI use the existing service integrations. Their availability depends on deployment credentials and browser permissions.
+- Road distance and ETA use an OSRM-compatible routing endpoint configured by `NEXT_PUBLIC_ROUTING_API_URL`. The public endpoint is a development fallback; production should use a managed or self-hosted service with an appropriate availability policy.
+- A task with a destination is treated as a two-leg journey: the task location is active through arrival, then the destination becomes active while the task is in progress.
 - Search submits to the relevant server-rendered list and supports empty and no-results states.
 
 ## Responsive and accessibility baseline
