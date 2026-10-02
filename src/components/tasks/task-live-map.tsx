@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CircleMarker, Map as LeafletMap, Polyline } from 'leaflet'
-import { Clock3, Navigation, Radio, Route } from 'lucide-react'
+import { Clock3, LocateFixed, Navigation, Radio, Route } from 'lucide-react'
 
 import { publicEnv } from '@/lib/env'
 import { createClient } from '@/lib/supabase/client'
@@ -265,7 +265,7 @@ export function TaskLiveMap({
       routeLayerRef.current?.remove()
       routeLayerRef.current = leaflet
         .polyline(routeSummary.coordinates, {
-          color: routeSummary.routed ? '#007bff' : '#667085',
+          color: routeSummary.routed ? '#5965f2' : '#667085',
           weight: routeSummary.routed ? 6 : 3,
           opacity: 0.9,
           dashArray: routeSummary.routed ? undefined : '8 8',
@@ -274,7 +274,8 @@ export function TaskLiveMap({
 
       if (!fittedRouteRef.current) {
         mapRef.current?.fitBounds(routeLayerRef.current.getBounds(), {
-          padding: [32, 32],
+          paddingTopLeft: [32, 88],
+          paddingBottomRight: [32, 180],
           maxZoom: 16,
         })
         fittedRouteRef.current = true
@@ -309,81 +310,117 @@ export function TaskLiveMap({
   const eta = routeSummary?.durationSeconds ?? null
   const arrivalTime = eta ? new Date(Date.now() + eta * 1000) : null
 
+  function recenterMap() {
+    if (routeLayerRef.current) {
+      mapRef.current?.fitBounds(routeLayerRef.current.getBounds(), {
+        paddingTopLeft: [32, 88],
+        paddingBottomRight: [32, 180],
+        maxZoom: 16,
+      })
+      return
+    }
+    if (location) mapRef.current?.setView([location.latitude, location.longitude], 15)
+    else if (target) {
+      mapRef.current?.setView(
+        [target.coordinate.latitude, target.coordinate.longitude],
+        15,
+      )
+    }
+  }
+
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div className="p-4 sm:p-5">
+    <section
+      className="relative isolate min-h-[31rem] overflow-hidden rounded-[1.75rem] border bg-muted shadow-sm sm:min-h-[36rem]"
+      aria-label="Live task tracking"
+    >
+      <div
+        ref={containerRef}
+        className="absolute inset-0 z-0 bg-muted"
+        role="region"
+        aria-label={`Live route map${target ? ` to ${target.label.toLowerCase()}` : ''}`}
+      />
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex items-start justify-between gap-2 p-3 sm:p-4">
+        <div className="max-w-[70%] rounded-2xl bg-[#5965f2] px-3 py-2 text-sm font-semibold text-white shadow-lg">
+          {arrivalTime ? (
+            <span className="flex items-center gap-2">
+              <Clock3 className="h-4 w-4 shrink-0" aria-hidden />
+              Arrive by{' '}
+              {arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          ) : (
+            <span>{routeLoading ? 'Finding quickest route…' : title}</span>
+          )}
+        </div>
+        <div className="flex min-h-14 min-w-14 flex-col items-center justify-center rounded-full border-4 border-white bg-success px-2 text-center text-white shadow-lg">
+          <strong className="text-base leading-none">{eta ? Math.max(1, Math.round(eta / 60)) : '—'}</strong>
+          <span className="text-[10px] font-bold leading-none">min</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={recenterMap}
+        className="absolute right-3 top-20 z-[500] grid min-h-11 min-w-11 place-items-center rounded-full border bg-background text-foreground shadow-md transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 sm:right-4 sm:top-24"
+        aria-label="Recenter route on map"
+      >
+        <LocateFixed className="h-5 w-5" aria-hidden />
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 z-[500] rounded-t-[1.75rem] border-t bg-background/95 px-4 pb-4 pt-3 shadow-[0_-8px_30px_rgba(15,23,42,0.16)] backdrop-blur sm:px-5 sm:pb-5">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
         <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-primary-subtle p-2.5 text-primary">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary-subtle text-primary">
             <Navigation className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold">{title}</p>
+              <h2 className="font-semibold">{title}</h2>
               {active ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-success-subtle px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-success">
                   <Radio className="h-3 w-3" aria-hidden /> Live
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-muted/60 p-3 text-sm sm:grid-cols-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Distance remaining</p>
-            <p className="mt-1 font-semibold">{formatDistance(routeSummary?.distanceMetres ?? null)}</p>
+        <dl className="mt-3 grid grid-cols-3 gap-2 text-sm">
+          <div className="min-w-0 rounded-xl bg-muted/60 p-2.5">
+            <dt className="text-[11px] text-muted-foreground">Distance</dt>
+            <dd className="mt-0.5 truncate font-semibold">{formatDistance(routeSummary?.distanceMetres ?? null)}</dd>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">ETA</p>
-            <p className="mt-1 font-semibold">{formatDuration(eta)}</p>
+          <div className="min-w-0 rounded-xl bg-muted/60 p-2.5">
+            <dt className="text-[11px] text-muted-foreground">ETA</dt>
+            <dd className="mt-0.5 truncate font-semibold">{formatDuration(eta)}</dd>
           </div>
-          <div className="col-span-2 sm:col-span-1">
-            <p className="text-xs text-muted-foreground">Current leg</p>
-            <p className="mt-1 font-semibold">{target?.label ?? 'Location needed'}</p>
+          <div className="min-w-0 rounded-xl bg-muted/60 p-2.5">
+            <dt className="text-[11px] text-muted-foreground">Current leg</dt>
+            <dd className="mt-0.5 truncate font-semibold">{target?.label ?? 'Location needed'}</dd>
           </div>
-        </div>
+        </dl>
 
-        <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-          <span className="flex items-center gap-1.5">
-            <Route className="h-3.5 w-3.5" aria-hidden />
-            {routeLoading ? 'Updating route…' : routeMessage}
-          </span>
-          {arrivalTime ? (
-            <span className="flex shrink-0 items-center gap-1.5 font-medium">
-              <Clock3 className="h-3.5 w-3.5" aria-hidden />
-              Arrive about{' '}
-              {arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <div className="mt-3 flex min-w-0 items-start gap-2 text-xs text-muted-foreground">
+          <Route className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1">{routeLoading ? 'Updating route…' : routeMessage}</span>
+          {location ? (
+            <span className="shrink-0">
+              {new Date(location.recorded_at).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </span>
           ) : null}
         </div>
-      </div>
-
-      <div
-        ref={containerRef}
-        className="h-[min(48dvh,24rem)] min-h-64 border-t bg-muted"
-        role="region"
-        aria-label={`Live route map${target ? ` to ${target.label.toLowerCase()}` : ''}`}
-      />
-
-      <div className="flex flex-col gap-1 border-t px-4 py-3 text-xs text-muted-foreground min-[420px]:flex-row min-[420px]:justify-between">
-        <span>
+        <p className="sr-only" aria-live="polite">
           {active
-            ? 'Live location and route update automatically'
+            ? 'Live location and route update automatically.'
             : location
-              ? 'Showing the last shared Go Agent location'
-              : 'Tracking has not started yet'}
-        </span>
-        {location ? (
-          <span className="shrink-0">
-            Updated{' '}
-            {new Date(location.recorded_at).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
-        ) : null}
+              ? 'Showing the last shared Go Agent location.'
+              : 'Tracking has not started yet.'}
+        </p>
       </div>
-    </div>
+    </section>
   )
 }

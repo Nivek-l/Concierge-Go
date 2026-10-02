@@ -114,18 +114,13 @@ export default async function TaskDetailPage({
           {task.status === 'awaiting_confirmation' ? <ProofReviewPanel taskId={id} /> : null}
 
           {['assigned', 'en_route', 'arrived', 'in_progress', 'awaiting_confirmation'].includes(task.status) ? (
-            <Card>
-              <CardHeader><CardTitle>Track your Go Agent</CardTitle></CardHeader>
-              <CardContent>
-                <TaskLiveMap
-                  taskId={id}
-                  status={task.status}
-                  initialLocation={liveLocation}
-                  pickup={task.location_latitude != null && task.location_longitude != null ? { latitude: task.location_latitude, longitude: task.location_longitude } : null}
-                  destination={task.destination_latitude != null && task.destination_longitude != null ? { latitude: task.destination_latitude, longitude: task.destination_longitude } : null}
-                />
-              </CardContent>
-            </Card>
+            <TaskLiveMap
+              taskId={id}
+              status={task.status}
+              initialLocation={liveLocation}
+              pickup={task.location_latitude != null && task.location_longitude != null ? { latitude: task.location_latitude, longitude: task.location_longitude } : null}
+              destination={task.destination_latitude != null && task.destination_longitude != null ? { latitude: task.destination_latitude, longitude: task.destination_longitude } : null}
+            />
           ) : null}
 
           <Card>
